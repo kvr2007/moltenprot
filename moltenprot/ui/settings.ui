@@ -54,7 +54,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>3</number>
    </property>
    <widget class="QWidget" name="importPage">
     <property name="geometry">
@@ -96,7 +96,7 @@
        <string/>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="CSV">
        <attribute name="title">
@@ -222,37 +222,28 @@
        <attribute name="title">
         <string>XLSX</string>
        </attribute>
-       <widget class="QWidget" name="horizontalLayoutWidget">
+       <widget class="QWidget" name="gridLayoutWidget_2">
         <property name="geometry">
          <rect>
-          <x>15</x>
+          <x>100</x>
+          <y>30</y>
+          <width>172</width>
+          <height>80</height>
+         </rect>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_2"/>
+       </widget>
+       <widget class="QWidget" name="layoutWidget">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
           <y>10</y>
-          <width>611</width>
+          <width>601</width>
           <height>101</height>
          </rect>
         </property>
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
-          <widget class="QCheckBox" name="refoldingCheckBox">
-           <property name="toolTip">
-            <string>Indicate if refolding ramp was used</string>
-           </property>
-           <property name="text">
-            <string>Refolding data</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="rawCheckBox">
-           <property name="toolTip">
-            <string>Indicate if refolding ramp was used</string>
-           </property>
-           <property name="text">
-            <string>Raw data</string>
-           </property>
-          </widget>
-         </item>
-         <item>
+        <layout class="QGridLayout" name="gridLayout_3">
+         <item row="0" column="0" rowspan="3">
           <widget class="QTextBrowser" name="textBrowser">
            <property name="html">
             <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -266,6 +257,36 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;&amp;gt; optionally, provide per-sample dCp values by creating an extra column with name &amp;quot;dCp&amp;quot;&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;Parsing of an XLSX file may take a long time, consider saving a MoltenProt session to JSON right after import.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QCheckBox" name="refoldingCheckBox">
+           <property name="toolTip">
+            <string>Indicate if refolding ramp was used</string>
+           </property>
+           <property name="text">
+            <string>Refolding data</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QCheckBox" name="rawCheckBox">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Indicate if this is raw or processed data&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>Raw data</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QCheckBox" name="pantaCheckBox">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Indicate if data was exported from the newer machine&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>Panta rhei (testing)</string>
            </property>
           </widget>
          </item>
@@ -387,8 +408,8 @@ p, li { white-space: pre-wrap; }
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>100</width>
-      <height>30</height>
+      <width>651</width>
+      <height>183</height>
      </rect>
     </property>
     <attribute name="label">
@@ -446,249 +467,189 @@ p, li { white-space: pre-wrap; }
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>100</width>
-      <height>30</height>
+      <width>651</width>
+      <height>183</height>
      </rect>
     </property>
     <attribute name="label">
      <string>Plots</string>
     </attribute>
-    <widget class="QComboBox" name="curveTypeComboBox">
-     <property name="geometry">
-      <rect>
-       <x>0</x>
-       <y>30</y>
-       <width>171</width>
-       <height>35</height>
-      </rect>
-     </property>
-     <property name="toolTip">
-      <string>Which data to plot</string>
-     </property>
-     <item>
-      <property name="text">
-       <string>Experimental signal</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Baseline-corrected</string>
-      </property>
-     </item>
-    </widget>
-    <widget class="QComboBox" name="curveViewComboBox">
-     <property name="geometry">
-      <rect>
-       <x>0</x>
-       <y>100</y>
-       <width>170</width>
-       <height>35</height>
-      </rect>
-     </property>
-     <property name="toolTip">
-      <string>How to plot data</string>
-     </property>
-     <item>
-      <property name="text">
-       <string>Datapoints + Fit</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Datapoints</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Fit</string>
-      </property>
-     </item>
-    </widget>
-    <widget class="QLabel" name="curveTypeLabel">
+    <widget class="QWidget" name="layoutWidget">
      <property name="geometry">
       <rect>
        <x>0</x>
        <y>0</y>
-       <width>151</width>
-       <height>21</height>
+       <width>621</width>
+       <height>165</height>
       </rect>
      </property>
-     <property name="text">
-      <string>Display curve:</string>
-     </property>
-    </widget>
-    <widget class="QLabel" name="curveViewLabel">
-     <property name="geometry">
-      <rect>
-       <x>0</x>
-       <y>70</y>
-       <width>151</width>
-       <height>21</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Display as:</string>
-     </property>
-    </widget>
-    <widget class="QGroupBox" name="additionalElementsGroupBox">
-     <property name="geometry">
-      <rect>
-       <x>200</x>
-       <y>0</y>
-       <width>201</width>
-       <height>171</height>
-      </rect>
-     </property>
-     <property name="title">
-      <string>Additional elements:</string>
-     </property>
-     <widget class="QCheckBox" name="curveVlinesCheckBox">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>70</y>
-        <width>181</width>
-        <height>22</height>
-       </rect>
-      </property>
-      <property name="toolTip">
-       <string>Show fit parameters that are on X-axis (e.g. Tm)</string>
-      </property>
-      <property name="text">
-       <string>Vertical lines</string>
-      </property>
-     </widget>
-     <widget class="QLabel" name="curveMarkEverySpinBoxLabel">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>100</y>
-        <width>131</width>
-        <height>18</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Show every:</string>
-      </property>
-     </widget>
-     <widget class="QCheckBox" name="curveBaselineCheckBox">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>40</y>
-        <width>181</width>
-        <height>22</height>
-       </rect>
-      </property>
-      <property name="toolTip">
-       <string>Show pre- and post-transition baselines</string>
-      </property>
-      <property name="text">
-       <string>Baselines</string>
-      </property>
-     </widget>
-     <widget class="QSpinBox" name="curveMarkEverySpinBox">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>130</y>
-        <width>60</width>
-        <height>27</height>
-       </rect>
-      </property>
-      <property name="toolTip">
-       <string extracomment="blah">Plot every n'th experimental datapoint</string>
-      </property>
-      <property name="minimum">
-       <number>1</number>
-      </property>
-     </widget>
-    </widget>
-    <widget class="QGroupBox" name="subplotsGroupBox">
-     <property name="geometry">
-      <rect>
-       <x>440</x>
-       <y>0</y>
-       <width>191</width>
-       <height>171</height>
-      </rect>
-     </property>
-     <property name="title">
-      <string>Subplots:</string>
-     </property>
-     <widget class="QCheckBox" name="curveDerivativeCheckBox">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>40</y>
-        <width>171</width>
-        <height>22</height>
-       </rect>
-      </property>
-      <property name="toolTip">
-       <string>Show smoothened experimental derivative in a separate plot</string>
-      </property>
-      <property name="text">
-       <string>Derivative plot</string>
-      </property>
-     </widget>
-     <widget class="QComboBox" name="curveLegendComboBox">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>100</y>
-        <width>171</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="toolTip">
-       <string>How to display the legend</string>
-      </property>
-      <item>
-       <property name="text">
-        <string>None</string>
-       </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="0">
+       <widget class="QLabel" name="curveTypeLabel">
+        <property name="text">
+         <string>Display curve:</string>
+        </property>
+       </widget>
       </item>
-      <item>
-       <property name="text">
-        <string>ID</string>
-       </property>
+      <item row="0" column="1">
+       <widget class="QLabel" name="curveTypeLabel_2">
+        <property name="text">
+         <string>Additional elements:</string>
+        </property>
+       </widget>
       </item>
-      <item>
-       <property name="text">
-        <string>Annotation</string>
-       </property>
+      <item row="0" column="2">
+       <widget class="QLabel" name="curveTypeLabel_3">
+        <property name="text">
+         <string>Subplots:</string>
+        </property>
+       </widget>
       </item>
-     </widget>
-     <widget class="QLabel" name="label">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>70</y>
-        <width>171</width>
-        <height>23</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Legend:</string>
-      </property>
-     </widget>
-    </widget>
-    <widget class="QCheckBox" name="curveHeatmapColorCheckBox">
-     <property name="geometry">
-      <rect>
-       <x>0</x>
-       <y>140</y>
-       <width>171</width>
-       <height>29</height>
-      </rect>
-     </property>
-     <property name="toolTip">
-      <string>Color curves based on the heatmap button colors</string>
-     </property>
-     <property name="text">
-      <string>Use heatmap color</string>
-     </property>
+      <item row="1" column="0">
+       <layout class="QVBoxLayout" name="verticalLayout_5">
+        <item>
+         <widget class="QComboBox" name="curveTypeComboBox">
+          <property name="toolTip">
+           <string>Which data to plot</string>
+          </property>
+          <item>
+           <property name="text">
+            <string>Experimental signal</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Baseline-corrected</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="curveViewLabel">
+          <property name="text">
+           <string>Display as:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="curveViewComboBox">
+          <property name="toolTip">
+           <string>How to plot data</string>
+          </property>
+          <item>
+           <property name="text">
+            <string>Datapoints + Fit</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Datapoints</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Fit</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="curveHeatmapColorCheckBox">
+          <property name="toolTip">
+           <string>Color curves based on the heatmap button colors</string>
+          </property>
+          <property name="text">
+           <string>Use heatmap color</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="1" column="1">
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QCheckBox" name="curveBaselineCheckBox">
+          <property name="toolTip">
+           <string>Show pre- and post-transition baselines</string>
+          </property>
+          <property name="text">
+           <string>Baselines</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="curveVlinesCheckBox">
+          <property name="toolTip">
+           <string>Show fit parameters that are on X-axis (e.g. Tm)</string>
+          </property>
+          <property name="text">
+           <string>Vertical lines</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="curveMarkEverySpinBoxLabel">
+          <property name="text">
+           <string>Show every:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="curveMarkEverySpinBox">
+          <property name="toolTip">
+           <string extracomment="blah">Plot every n'th experimental datapoint</string>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="1" column="2">
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <item>
+         <widget class="QCheckBox" name="curveDerivativeCheckBox">
+          <property name="toolTip">
+           <string>Show smoothened experimental derivative in a separate plot</string>
+          </property>
+          <property name="text">
+           <string>Derivative plot</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Legend:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="curveLegendComboBox">
+          <property name="toolTip">
+           <string>How to display the legend</string>
+          </property>
+          <item>
+           <property name="text">
+            <string>None</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>ID</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Annotation</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
     </widget>
    </widget>
   </widget>

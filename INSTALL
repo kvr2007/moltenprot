@@ -69,6 +69,8 @@ conda install joblib
 
     ```
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+    # to disable analytics
+    brew analytics off
     ```
 
     * install Python 3
@@ -82,7 +84,20 @@ conda install joblib
 2) Install dependencies:
     `pip install pandas scipy openpyxl xlrd matplotlib pyqt5 setuptools`
 
-    NOTE: on Mac with Homebrew use pip3 instead
+    NOTE: on Mac with Homebrew use `pip3` instead
+    
+    NOTE: Mac M1 may have additional troubles due to the processor architecture. The following commands worked well in mid-2021:
+    ```
+    python3 -m pip install Cython
+    python3 -m pip install --no-binary :all: --no-use-pep517 numpy
+    python3 -m pip install pybind11
+    brew install openblas gfortran
+    export OPENBLAS=/opt/homebrew/opt/openblas/lib/
+    pip3 install pythran
+    pip3 install --no-binary :all: --no-use-pep517 scipy
+    # PyQt5 needs to be installed via homebrew
+    brew install pyqt@5
+    ```
 
 ## MoltenProt
 1) download the source code:
@@ -139,6 +154,17 @@ This will create a desktop and menu shortcuts for MoltenProt GUI (use options `-
 
 Alternatively, use PyInstaller bundles (see below on how to build them).
 
+### PyInstaller bundles on MacOS
+MacOS may prohibit startup of "non-verified" programs. To fix this in command line:
+```
+# check if the file is in quarantine
+xattr moltenprot_mac.app
+# quarantined apps will have attribute `com.apple.quarantine`
+# remove the attribute recursively
+xattr -r -d com.apple.quarantine moltenprot_mac.app
+```
+[link](https://apple.stackexchange.com/questions/387000)
+
 # Developer info
 ## Tracing warnings
 
@@ -185,7 +211,9 @@ pathex was removed from the spec file to make it portable.
 pyinstaller moltenprot_mac.spec
 ```
 Original pyinstaller command to produce spec file:
+```
 pyinstaller -y -w -n moltenprot_mac  -i moltenprot/ui/icons/app_icon.ico --add-data moltenprot/VERSION:moltenprot --add-data COPYING:moltenprot --add-data moltenprot/doc/index.pdf:help --add-data moltenprot/resources/demo1.csv:demo_data --add-data moltenprot/resources/demo2.xlsx:demo_data --add-data moltenprot/resources/report.template:moltenprot/resources --exclude-module joblib --hidden-import scipy.special.cython_special moltenprot/__main__.py
+```
 
 ### Notes:
 * The output folder is quite large (~1 GB), presumably due to the presence of MKL library. This is inevitable, because scipy for Windows is only available with MKL

@@ -256,11 +256,11 @@ def CLIparser():
     csv_grp.add_argument(
         "--dec", default=core.defaults["dec"], type=str, help=core.defaults["dec_h"]
     )
-    
+
     csv_grp.add_argument(
-       "--spectrum" , action='store_true', help=core.defaults['spectrum_h']
+        "--spectrum", action="store_true", help=core.defaults["spectrum_h"]
     )
-    
+
     # for CSV input - specify with denaturant is used and type of readout
     csv_grp.add_argument(
         "-d",
@@ -291,7 +291,14 @@ def CLIparser():
     xls_grp.add_argument(
         "--raw",
         action="store_true",
-        help="For XLSX input: indicate if \"raw\" rather than \"processed\" file is provided",
+        help='For XLSX input: indicate if "raw" rather than "processed" file is provided',
+    )
+
+    # panta device
+    xls_grp.add_argument(
+        "--panta-rhei",
+        action="store_true",
+        help='For XLSX input: indicate if the XLSX data was exported from a Panta machine',
     )
 
     ## Output options
@@ -309,7 +316,7 @@ def CLIparser():
         "-r",
         "--report_format",
         default=None,
-        choices=['pdf', 'xlsx', 'html'],
+        choices=["pdf", "xlsx", "html"],
         help="Make a report in PDF, XLSX or HTML format",
     )
 
@@ -364,7 +371,7 @@ def MoltenprotCLI(args):
     """
     # print citation and exit
     if args.citation:
-        print(core.citation['long'])
+        print(core.citation["long"])
         sys.exit(0)
 
     # print version info from core
@@ -438,7 +445,7 @@ def MoltenprotCLI(args):
                     dec=args.dec,
                     denaturant=args.denaturant,
                     readout=args.readout,
-                )                
+                )
             else:
                 data = core.parse_plain_csv(
                     input_file,
@@ -455,7 +462,9 @@ def MoltenprotCLI(args):
             else:
                 LE = False
 
-            data = core.parse_prom_xlsx(input_file, raw=args.raw, refold=args.refold, LE=LE)
+            data = core.parse_prom_xlsx(
+                input_file, raw=args.raw, refold=args.refold, LE=LE, panta_rhei=args.panta_rhei,
+            )
 
         elif file_ext == ".json":
             # NOTE currently this would mean that the previous JSON session is re-analysed with new settings
@@ -552,8 +561,8 @@ def MoltenprotGUI(localizationStuffFlag=False):
     https://doc.qt.io/qt-5/highdpi.html
     """
     os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+    QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     app = QApplication(sys.argv)
-    app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
 
     splashPixmap = QPixmap(":/splash.png")
     # splash = QSplashScreen(QDesktopWidget().screen(), splashPixmap, Qt.WindowStaysOnTopHint)

@@ -18,12 +18,13 @@ Copyright 2018-2021 Vadim Kotov, Thomas C. Marlovits
 """
 ### Citation
 # a simple dict with strings that provide different citation formatting
-citation = {'long':"\nIf you found MoltenProt helpful in your work, please cite:\nKotov et al., Protein Science (2021)\ndoi: 10.1002/pro.3986\n",
-            'html':"""<p>If you found MoltenProt helpful in your work, please cite: </p> 
+citation = {
+    "long": "\nIf you found MoltenProt helpful in your work, please cite:\nKotov et al., Protein Science (2021)\ndoi: 10.1002/pro.3986\n",
+    "html": """<p>If you found MoltenProt helpful in your work, please cite: </p> 
                       <p>Kotov et al., Protein Science (2021)</p>
                       <p><a href="https://dx.doi.org/10.1002/pro.3986">doi: 10.1002/pro.3986</a></p>""",
-            'short': 'Citation: Kotov et al., Protein Science (2021) doi: 10.1002/pro.3986',
-    }
+    "short": "Citation: Kotov et al., Protein Science (2021) doi: 10.1002/pro.3986",
+}
 
 
 ### Modules
@@ -194,8 +195,8 @@ defaults = {
     "sep_h": "CSV separator, enclosed in quotes",
     "readout": "Signal",
     "readout_h": "For plain CSV input only; specify type of input signal",
-    'spectrum': False,
-    'spectrum_h': 'If true, columns in the input CSV will be treated as separate wavelengths of a spectrum',
+    "spectrum": False,
+    "spectrum_h": "If true, columns in the input CSV will be treated as separate wavelengths of a spectrum",
     "heatmap_cmap": "coolwarm_r",  # a color-safe heatmap color with red being "bad" (low value)
     "heatmap_cmap_h": "Matplotlib code for colormap that would be used to color-code heatmaps in reports or images",
 }
@@ -204,14 +205,15 @@ defaults = {
 # NOTE to be automatically identified the model has to be subclass or subsubclass of MoltenProtModel
 avail_models = {}
 for model in models.MoltenProtModel.__subclasses__():
-    avail_models[model.short_name] = model # subclass of MoltenProtModel
-    for submodel in model.__subclasses__(): # subsubclass of MoltenProtModel
+    avail_models[model.short_name] = model  # subclass of MoltenProtModel
+    for submodel in model.__subclasses__():  # subsubclass of MoltenProtModel
         avail_models[submodel.short_name] = submodel
-        
+
 # add a dummy model to indicate that the dataset should not be analysed
-avail_models['skip'] = 'skip'
+avail_models["skip"] = "skip"
 
 ### Utility functions
+
 
 def normalize(input, new_min=0, new_max=1, from_input=False):
     """Helper function to normalize a pandas Series
@@ -804,23 +806,25 @@ class MoltenProtFit:
         # Making not available values gray (e.g. bad fit or blanks)
         # either convert pd to numpy array and make a mask, or
         # create figure canvas
-        #plt.figure(figsize=(12, 6))
+        # plt.figure(figsize=(12, 6))
         # A4 is 8.3 x 11.7 inches, for report the whole page is needed
         # for other outputs we need half the hight (i.e. A5 in landscape orientation)
         if pdf_report:
-            #fig = plt.figure(figsize=(8.3, 11.7))
-            fig, ax = plt.subplots(3,1, figsize=(8.3, 11.7))
+            # fig = plt.figure(figsize=(8.3, 11.7))
+            fig, ax = plt.subplots(3, 1, figsize=(8.3, 11.7))
             cbar_shrink = 0.3
-            cbar_orient = 'horizontal'
+            cbar_orient = "horizontal"
             heatmap_axis = ax[0]
-            axis_aspect = ['auto']
+            axis_aspect = ["auto"]
         else:
-            fig = plt.figure(figsize=(8.3, 11.7/2), tight_layout=True)
-            cbar_shrink = 8/12
-            cbar_orient = 'vertical'
+            fig = plt.figure(figsize=(8.3, 11.7 / 2), tight_layout=True)
+            cbar_shrink = 8 / 12
+            cbar_orient = "vertical"
             heatmap_axis = fig.gca()
-            axis_aspect = ['equal', 'box']
-        fig.suptitle(title, fontweight='bold',)
+            axis_aspect = ["equal", "box"]
+        fig.suptitle(
+            title, fontweight="bold",
+        )
         # create the heatmap
         # NOTE in some rare cases when the heatmap consists of a single sample matplotlib will raise a warning:
         """
@@ -829,9 +833,7 @@ class MoltenProtFit:
         RuntimeWarning: invalid value encountered in greater_equal
         b = b[(b <= intv[1] + eps) & (b >= intv[0] - eps)]
         """
-        c = heatmap_axis.pcolor(
-            plate96, edgecolors="k", cmap=cmap, vmin=vmin, vmax=1
-        )
+        c = heatmap_axis.pcolor(plate96, edgecolors="k", cmap=cmap, vmin=vmin, vmax=1)
 
         # cycle through all wells and write there the ID
         for i in plate96.index:
@@ -850,17 +852,23 @@ class MoltenProtFit:
         heatmap_axis.invert_yaxis()
         # addtional hacks: enforce square size of wells, hide axes and ticks
         heatmap_axis.set_aspect(*axis_aspect)
-        heatmap_axis.axis('off')
+        heatmap_axis.axis("off")
         # create a colorbar with text labels
-        cbar = fig.colorbar(c, ax=heatmap_axis, ticks=tick_values, shrink=cbar_shrink, orientation=cbar_orient)
+        cbar = fig.colorbar(
+            c,
+            ax=heatmap_axis,
+            ticks=tick_values,
+            shrink=cbar_shrink,
+            orientation=cbar_orient,
+        )
         # set colorbar ticks depending on the requested orientation
-        if cbar_orient == 'horizontal':
+        if cbar_orient == "horizontal":
             cbar.ax.set_xticklabels(tick_labels)
-        elif cbar_orient == 'vertical':
+        elif cbar_orient == "vertical":
             cbar.ax.set_yticklabels(tick_labels)
         # label is not needed, because it will be in the figure title
-        #cbar.set_label(use_column)
-        
+        # cbar.set_label(use_column)
+
         if pdf_report:
             # return the figure object for subsequent manipulations
             return (fig, ax)
@@ -869,7 +877,7 @@ class MoltenProtFit:
             plt.savefig(
                 os.path.join(output_path, "heatmap_" + str(use_column) + ".png"),
                 dpi=(200),
-                tight_layout=True
+                tight_layout=True,
             )
         # clean up after plotting so that no parameters are carried over to genpics
         plt.close("all")
@@ -1085,7 +1093,16 @@ class MoltenProtFit:
             * self.plate_results.T_onset
         )
 
-    def plotfig(self, output_path, wellID, datatype="overview", save=True, show=False, data_ax = None, vline_legend=False):
+    def plotfig(
+        self,
+        output_path,
+        wellID,
+        datatype="overview",
+        save=True,
+        show=False,
+        data_ax=None,
+        vline_legend=False,
+    ):
         """
         Plot the curves from individual wells.
         Creates two subplots - top the fit + data, lower - derivative
@@ -1233,7 +1250,13 @@ class MoltenProtFit:
             # NOTE this would not print the value/stdev on the plot, has to be done separately
             for parameter_name in self.plotlines:
                 if vline_legend:
-                    data_ax.axvline(self.plate_results[parameter_name][i], ls='dotted', c='b', lw=3, label=parameter_name)
+                    data_ax.axvline(
+                        self.plate_results[parameter_name][i],
+                        ls="dotted",
+                        c="b",
+                        lw=3,
+                        label=parameter_name,
+                    )
                 else:
                     # NOTE in this case lines are not labeled so that they are not listed in the legend
                     data_ax.axvline(
@@ -1245,7 +1268,7 @@ class MoltenProtFit:
                         data_ax.get_ylim()[0] + 0.05 * y_range,
                         " " + parameter_name,
                         fontsize=12,
-                )
+                    )
             if deriv_ax is not None:
                 fig.legend(loc="lower center", ncol=4, fontsize=12)
                 # commands for derivative plot (used only in overview mode)
@@ -1261,7 +1284,7 @@ class MoltenProtFit:
                 # xlim for derivative plot and data plot must be the same!
                 deriv_ax.set_xlim(self.xlim)
                 deriv_ax.grid(True, which="both")
-        
+
         if deriv_ax is None:
             # if data_ax was provided externally, then showing/saving should not be done
             return None
@@ -1894,7 +1917,7 @@ class MoltenProtFit:
                     pd.Series(
                         f(
                             self.plate_fit.index,
-                            *list(input_series[len(p0) : (len(p0)) * 2])
+                            *list(input_series[len(p0) : (len(p0)) * 2]),
                         ),
                         index=self.plate_fit.index,
                         name=input_series.name,
@@ -1960,7 +1983,9 @@ class MoltenProtFit:
             self._calc_Tons("T1_fit", "dHm1_fit", self.onset_threshold)
             # Calculate T2 from dT2_1_fit
             # TODO error propagation
-            self.plate_results['T2_fit'] = self.plate_results['T1_fit'] + self.plate_results['dT2_1_fit']
+            self.plate_results["T2_fit"] = (
+                self.plate_results["T1_fit"] + self.plate_results["dT2_1_fit"]
+            )
             # NOTE dCp is hard to determine for the intermediate, so it is completely neglected
             # dG is calculated for each reaction (N<->I and I<->U) and then combined following the principle of thermodynamic coupling
             self.plate_results["dG_comb_std"] = self.plate_results["dHm1_fit"] * (
@@ -2243,10 +2268,10 @@ class MoltenProtFit:
 
         self.plate_results.rename(columns=rename_dict, inplace=True)
         self.plate_results_stdev.rename(columns=rename_dict, inplace=True)
-    
+
     @staticmethod
     def _trim_string(string, length=30, symmetric=True):
-        '''
+        """
         Helper method to trim a string to a specific length by removing the middle part
         
         Arguments
@@ -2257,19 +2282,19 @@ class MoltenProtFit:
             length of the data to keep
         symmetric
             if true, also show the end of the string
-        '''
+        """
         # ensure that input is a str
         string = str(string)
         # if too short, return as is
-        if len(string)<=length:
+        if len(string) <= length:
             return string
         if symmetric:
-            return string[:length//2] + " ... " +string[-length//2:]
+            return string[: length // 2] + " ... " + string[-length // 2 :]
         else:
             return string[:length] + "..."
-        
+
     def _plotfig_pdf(self, samples, failed=False):
-        '''
+        """
         A helper method for smart packing of individual sample plots into figures
         
         Parameters
@@ -2282,43 +2307,63 @@ class MoltenProtFit:
         Returns
         -------
         A list of Figure objects to be added to pages list
-        '''
+        """
         if failed:
-            suptitle = 'Excluded/failed samples'
-            datatype = 'raw'
+            suptitle = "Excluded/failed samples"
+            datatype = "raw"
         else:
-            suptitle = 'Successful fits'
-            datatype = 'overview'
+            suptitle = "Successful fits"
+            datatype = "overview"
         pages = []
         n_results = len(samples)
         # intialize figures, axes, and plot counter
-        plot_fig, plot_axs = plt.subplots(4,3, sharex=False, sharey=False, figsize=(8.3, 11.7))
-        plot_fig.suptitle(suptitle, fontweight='bold', fontsize='x-large')
+        plot_fig, plot_axs = plt.subplots(
+            4, 3, sharex=False, sharey=False, figsize=(8.3, 11.7)
+        )
+        plot_fig.suptitle(suptitle, fontweight="bold", fontsize="x-large")
         plot_axs = list(plot_axs.flat)
         plot_counter = 0
         for sample in samples:
             if plot_counter < 11:
-                self.plotfig('dummy_output', sample, datatype=datatype, save=False, show=False, data_ax=plot_axs[plot_counter], vline_legend=True)
+                self.plotfig(
+                    "dummy_output",
+                    sample,
+                    datatype=datatype,
+                    save=False,
+                    show=False,
+                    data_ax=plot_axs[plot_counter],
+                    vline_legend=True,
+                )
                 plot_counter += 1
             # if the 11th plot was plotted, append old figure and initialize a new one
             # this should be also triggered if less than 11 is plotted
             if (plot_counter == 11) or (plot_counter == n_results):
                 # make legend in the next axes
-                plot_axs[plot_counter].legend(handles=plot_axs[plot_counter-1].get_lines(), mode='expand', ncol=1)
+                plot_axs[plot_counter].legend(
+                    handles=plot_axs[plot_counter - 1].get_lines(),
+                    mode="expand",
+                    ncol=1,
+                )
                 # hide remaining unused axes
                 while plot_counter <= 11:
                     plot_axs[plot_counter].set_axis_off()
                     plot_counter += 1
-                plot_fig.tight_layout(rect=(0.02, 0.05, 0.98, 0.95)) # rect leaves some margins empty
+                plot_fig.tight_layout(
+                    rect=(0.02, 0.05, 0.98, 0.95)
+                )  # rect leaves some margins empty
                 pages.append(plot_fig)
-                plot_fig, plot_axs = plt.subplots(4,3, sharex=False, sharey=False, figsize=(8.3, 11.7))
-                plot_fig.suptitle(suptitle + " (continued)", fontweight='bold', fontsize='x-large')
+                plot_fig, plot_axs = plt.subplots(
+                    4, 3, sharex=False, sharey=False, figsize=(8.3, 11.7)
+                )
+                plot_fig.suptitle(
+                    suptitle + " (continued)", fontweight="bold", fontsize="x-large"
+                )
                 plot_axs = list(plot_axs.flat)
                 plot_counter = 0
         return pages
-    
+
     def PdfReport(self, outfile):
-        '''
+        """
         Generate and write a multi-page PDF report
         
         Parameters
@@ -2331,121 +2376,168 @@ class MoltenProtFit:
         * heatmap and converter96 are ancient methods, so they are just carefully wrapped around
         * each page is a figure object
         * multi-page pdf as per mpl [docs](https://matplotlib.org/stable/gallery/misc/multipage_pdf.html)
-        '''
+        """
         from matplotlib.backends.backend_pdf import PdfPages
         from matplotlib.table import table as mpl_table
-        
-        result_columns = self.getResultsColumns() # the first value should be the recommended sorting parameter followed by vlines and BS/S
+
+        result_columns = (
+            self.getResultsColumns()
+        )  # the first value should be the recommended sorting parameter followed by vlines and BS/S
         # add condition column
-        result_columns = ['Condition', *result_columns]
+        result_columns = ["Condition", *result_columns]
         sort_parameter = result_columns[1]
         # preprocess the result df
-        result_table = self.plate_results.loc[:, result_columns].copy() # to prevent edits to the original DF
-        result_table = np.round(result_table, 2) # round the numeric data
-        result_table['Condition'] = result_table['Condition'].apply(self._trim_string, length=10, symmetric=False)
-        result_table_colors = result_table.copy()# color table 1.0 is white 0 is black
-        result_table_colors.loc[:,:] = '1.0'
-        result_table_colors.iloc[::2] = '0.75'
+        result_table = self.plate_results.loc[
+            :, result_columns
+        ].copy()  # to prevent edits to the original DF
+        result_table = np.round(result_table, 2)  # round the numeric data
+        result_table["Condition"] = result_table["Condition"].apply(
+            self._trim_string, length=10, symmetric=False
+        )
+        result_table_colors = result_table.copy()  # color table 1.0 is white 0 is black
+        result_table_colors.loc[:, :] = "1.0"
+        result_table_colors.iloc[::2] = "0.75"
         result_table_colors = result_table_colors.values
         result_index = result_table.index
-        result_table = result_table.values # convert to a list of lists
-        n_results = len(result_table) # total number of results
-        pages = [] 
-        
+        result_table = result_table.values  # convert to a list of lists
+        n_results = len(result_table)  # total number of results
+        pages = []
+
         ## Page 1: Heatmap of the respective sortby parameter, top 15 results, run info
         plate96 = self.converter96(sort_parameter, reference=None)
         page1, page1_ax = self.heatmap(
-            'dummy_output',
-            plate96,
-            sort_parameter,
-            save=False,
-            pdf_report=True
+            "dummy_output", plate96, sort_parameter, save=False, pdf_report=True
         )
-        page1_ax[0].set_title('Heatmap of {}'.format(sort_parameter), loc='left', fontweight='bold')
+        page1_ax[0].set_title(
+            "Heatmap of {}".format(sort_parameter), loc="left", fontweight="bold"
+        )
         # mpl tables cannot do word wrapping, so trim the file name
         filename = self._trim_string(self.filename)
         mp_version = __version__
         if from_pyinstaller:
-            mp_version += ' (PyInstaller bundle)'
-        timestamp = strftime("%c")        
+            mp_version += " (PyInstaller bundle)"
+        timestamp = strftime("%c")
         # failed fits and user-excluded samples
         excluded = self._get_failed_samples()
         if len(excluded) > 0:
             excluded_str = self._trim_string(", ".join(list(excluded)))
         else:
-            excluded_str = 'None'
-        
-        info_table =[[ "Timestamp", timestamp],
-                     ['Input file' , filename],                      
-                     ['Scan rate, degrees/min', self.scan_rate],
-                     ['MoltenProt version', mp_version],
-                     ['Analysis model', self.model],
-                     ['Excluded/failed samples', excluded_str],
-                     ]
+            excluded_str = "None"
+
+        info_table = [
+            ["Timestamp", timestamp],
+            ["Input file", filename],
+            ["Scan rate, degrees/min", self.scan_rate],
+            ["MoltenProt version", mp_version],
+            ["Analysis model", self.model],
+            ["Excluded/failed samples", excluded_str],
+        ]
         info_table_ax = page1_ax[2]
-        info_table = mpl_table(info_table_ax, info_table, loc='upper left', edges='open', cellLoc='left',)
+        info_table = mpl_table(
+            info_table_ax, info_table, loc="upper left", edges="open", cellLoc="left",
+        )
 
         # using the solution from here to set proper font size in the table:
         # https://stackoverflow.com/questions/15514005/how-to-change-the-tables-fontsize-with-matplotlib-pyplot
         info_table.auto_set_font_size(False)
-        info_table_ax.set_title('Run info', loc='left', fontweight='bold')
+        info_table_ax.set_title("Run info", loc="left", fontweight="bold")
         top10_table_ax = page1_ax[1]
-        top10_table = mpl_table(top10_table_ax, result_table[:15, :], loc='upper left', colLabels=result_columns, cellLoc='left', rowLabels=result_index[:15], cellColours=result_table_colors[:15,:])
-        top10_table_ax.set_title('Top 15 results', loc='left', fontweight='bold')
-        
+        top10_table = mpl_table(
+            top10_table_ax,
+            result_table[:15, :],
+            loc="upper left",
+            colLabels=result_columns,
+            cellLoc="left",
+            rowLabels=result_index[:15],
+            cellColours=result_table_colors[:15, :],
+        )
+        top10_table_ax.set_title("Top 15 results", loc="left", fontweight="bold")
+
         info_table_ax.set_axis_off()
         top10_table_ax.set_axis_off()
-        
+
         # finalize page 1
-        page1.suptitle("MoltenProt Report: {}".format(self.readout_type), fontweight='bold', fontsize='x-large')
+        page1.suptitle(
+            "MoltenProt Report: {}".format(self.readout_type),
+            fontweight="bold",
+            fontsize="x-large",
+        )
         # add citation to the bottom of the page
-        page1.text(0.5, 0.05, citation['short'],  ha='center') #fontstyle='italic',
+        page1.text(0.5, 0.05, citation["short"], ha="center")  # fontstyle='italic',
         pages.append(page1)
-        
+
         ## Full result table - create if more than 15 results (but less than 48)
         if n_results > 15:
-            page2, page2_ax = plt.subplots(1,1,figsize=(8.3, 11.7))
-            page2_table = mpl_table(page2_ax, result_table[:48], loc='upper left', colLabels=result_columns, cellLoc='left', rowLabels=result_index[:48], cellColours=result_table_colors[:48])
+            page2, page2_ax = plt.subplots(1, 1, figsize=(8.3, 11.7))
+            page2_table = mpl_table(
+                page2_ax,
+                result_table[:48],
+                loc="upper left",
+                colLabels=result_columns,
+                cellLoc="left",
+                rowLabels=result_index[:48],
+                cellColours=result_table_colors[:48],
+            )
             page2_ax.set_axis_off()
-            page2_ax.set_title('Result table (sorted by {})'.format(sort_parameter), loc='left', fontweight='bold')
+            page2_ax.set_title(
+                "Result table (sorted by {})".format(sort_parameter),
+                loc="left",
+                fontweight="bold",
+            )
             pages.append(page2)
-        
+
         # if more than 48 samples are present
         if n_results > 48:
-            page3, page3_ax = plt.subplots(1,1,figsize=(8.3, 11.7))
-            page3_table = mpl_table(page3_ax, result_table[48:], loc='upper left', colLabels=result_columns, cellLoc='left', rowLabels=result_index[48:], cellColours=result_table_colors[48:])
+            page3, page3_ax = plt.subplots(1, 1, figsize=(8.3, 11.7))
+            page3_table = mpl_table(
+                page3_ax,
+                result_table[48:],
+                loc="upper left",
+                colLabels=result_columns,
+                cellLoc="left",
+                rowLabels=result_index[48:],
+                cellColours=result_table_colors[48:],
+            )
             page3_ax.set_axis_off()
-            page3_ax.set_title('Result table (continued)', loc='left', fontweight='bold')
+            page3_ax.set_title(
+                "Result table (continued)", loc="left", fontweight="bold"
+            )
             pages.append(page3)
 
         ## pages with plots of individual curves
-        pages += self._plotfig_pdf(self.plate_results.index)        
+        pages += self._plotfig_pdf(self.plate_results.index)
         ## same as above, but for failed fits
         pages += self._plotfig_pdf(excluded, failed=True)
-        
+
         # write output
         page_no = 1
         page_count = len(pages)
         with PdfPages(outfile) as pdf_file:
             for i in pages:
                 # add page number and save
-                i.text(0.5, 0.025, "-- Page {} of {} --".format(page_no, page_count), fontstyle='italic', ha='center')
+                i.text(
+                    0.5,
+                    0.025,
+                    "-- Page {} of {} --".format(page_no, page_count),
+                    fontstyle="italic",
+                    ha="center",
+                )
                 page_no += 1
                 pdf_file.savefig(i)
-        
+
         # clean up mpl objects
-        plt.close('all')
-    
+        plt.close("all")
+
     def _get_failed_samples(self):
-        '''
+        """
         Return a list of samples that were either excluded or not fit
         
         Notes
         -----
         * will raise a value error if the analysis is not done
-        '''
+        """
         return self.plate_raw.columns.difference(self.plate_results.index)
-    
+
     def WriteOutput(
         self,
         print10=False,
@@ -2552,21 +2644,24 @@ class MoltenProtFit:
                     encoding="utf-8",
                 )
                 self.plate_fit.to_csv(
-                    os.path.join(output_path, resources_prefix + "_fit.csv"), sep=str(","),
+                    os.path.join(output_path, resources_prefix + "_fit.csv"),
+                    sep=str(","),
                     encoding="utf-8",
                 )
                 self.plate.to_csv(
                     os.path.join(output_path, resources_prefix + "_preproc_curves.csv"),
-                    sep=str(","),encoding="utf-8",
+                    sep=str(","),
+                    encoding="utf-8",
                 )
                 self.plate_raw_corr.to_csv(
                     os.path.join(output_path, resources_prefix + "_raw_corr.csv"),
-                    sep=str(","),encoding="utf-8",
+                    sep=str(","),
+                    encoding="utf-8",
                 )
         # PDF report
         if pdf:
             self.PdfReport(os.path.join(output_path, resources_prefix + "_report.pdf"))
-        
+
         # generate heatmaps
         if len(heatmaps) > 0:
             if "all" in heatmaps:
@@ -2666,7 +2761,7 @@ class MoltenProtFitMultiple:
         """
         self.layout = layout
         if layout is not None:
-            self.layout_raw = layout.copy() # a backup copy of the original layout
+            self.layout_raw = layout.copy()  # a backup copy of the original layout
         else:
             self.layout_raw = None
         self.source = source
@@ -2723,7 +2818,7 @@ class MoltenProtFitMultiple:
                 analysis_settings = analysis_kwargs(dataset.__dict__)
                 model_settings[dataset_name] = dataset.model
             # unprocessed MPF may not have the model attribute
-            if hasattr(dataset, 'model'):
+            if hasattr(dataset, "model"):
                 if dataset.model == "skip":
                     model_settings[dataset_name] = dataset.model
 
@@ -2797,8 +2892,8 @@ class MoltenProtFitMultiple:
             output = []
             for dataset_name, dataset in self.datasets.items():
                 # NOTE model attribute is only added after processing
-                if hasattr(dataset,'model'):
-                    if dataset.model == 'skip':
+                if hasattr(dataset, "model"):
+                    if dataset.model == "skip":
                         continue
                 output.append(dataset_name)
             return tuple(output)
@@ -2819,26 +2914,28 @@ class MoltenProtFitMultiple:
             # also update the layout info in plate_results (if present)
             if hasattr(mp_fit, "plate_results"):
                 mp_fit.plate_results["Condition"] = self.layout["Condition"]
-    
+
     def ResetLayout(self):
-        '''
+        """
         Change the master layout in MPFM to layout_raw (recorded during parsing of XLSX in newer versions of moltenprot) and update all MPF instances
-        '''
+        """
         if self.layout_raw is not None:
-            self.layout = self.layout_raw.copy() # need to copy, because all edits to the layout will propagate to layout_raw, and it will not be "original"
-            self.UpdateLayout()                
+            self.layout = (
+                self.layout_raw.copy()
+            )  # need to copy, because all edits to the layout will propagate to layout_raw, and it will not be "original"
+            self.UpdateLayout()
         else:
-            self.print_message('Attribute layout_raw is None, nothing to reset', 'w')
-        
+            self.print_message("Attribute layout_raw is None, nothing to reset", "w")
+
     def SetScanRate(self, scan_rate):
-        '''
+        """
         Sets a new scan rate (degC/min) to all datasets
-        '''
+        """
         # too high precision is not relevant
-        self.scan_rate = round(scan_rate,2)
+        self.scan_rate = round(scan_rate, 2)
         for dataset_id, mp_fit in self.datasets.items():
             mp_fit.scan_rate = self.scan_rate
-    
+
     def RenameResultsColumns(self, which, mapping):
         """
         E.g. in scattering data, the output is not Tm, but Tagg
@@ -3059,19 +3156,19 @@ class MoltenProtFitMultiple:
         )
 
         return output
-    
+
     def WriteOutputSingle(
         self,
         which,
         outfolder,
-        #heatmap_cmap=defaults["heatmap_cmap"],
-        #xlsx=False,
-        #genpics=False,
-        #heatmaps=[],
+        # heatmap_cmap=defaults["heatmap_cmap"],
+        # xlsx=False,
+        # genpics=False,
+        # heatmaps=[],
         subfolder=False,
-        #n_jobs=1,
-        #no_data=False,
-        **kwargs # keyword args for WriteOutput
+        # n_jobs=1,
+        # no_data=False,
+        **kwargs,  # keyword args for WriteOutput
     ):
         """
         Write output to disc for a single dataset
@@ -3110,14 +3207,14 @@ class MoltenProtFitMultiple:
             # HACK to minimize edits to MoltenProtFit assingment of outfolder is done via the attribute
             self.datasets[which].resultfolder = outfolder
             self.datasets[which].WriteOutput(
-                #xlsx=xlsx,
-                #genpics=genpics,
-                #heatmap_cmap=heatmap_cmap,
-                #heatmaps=heatmaps,
+                # xlsx=xlsx,
+                # genpics=genpics,
+                # heatmap_cmap=heatmap_cmap,
+                # heatmaps=heatmaps,
                 resources_prefix=which,
-                #n_jobs=n_jobs,
-                #no_data=no_data
-                **kwargs
+                # n_jobs=n_jobs,
+                # no_data=no_data
+                **kwargs,
             )
             # delete the attribute completely
             del self.datasets[which].resultfolder
@@ -3125,13 +3222,13 @@ class MoltenProtFitMultiple:
     def WriteOutputAll(
         self,
         outfolder,
-        #report,
+        # report,
         xlsx=False,
         genpics=False,
         heatmaps=[],
         report_format=None,
         heatmap_cmap=defaults["heatmap_cmap"],
-        #summary=False,
+        # summary=False,
         n_jobs=1,
         no_data=False,
         session=False,
@@ -3168,7 +3265,7 @@ class MoltenProtFitMultiple:
             # for single-dataset instances (and no reports planned)
             # write everything to outdir
             output_kwargs["subfolder"] = False
-        
+
         if xlsx:
             output_kwargs["xlsx"] = True
         if heatmaps:
@@ -3177,11 +3274,11 @@ class MoltenProtFitMultiple:
         if genpics:
             output_kwargs["genpics"] = True
 
-        output_kwargs["heatmap_cmap"] = heatmap_cmap        
-        output_kwargs['no_data'] = no_data
+        output_kwargs["heatmap_cmap"] = heatmap_cmap
+        output_kwargs["no_data"] = no_data
 
-        #NOTE since reports are pre-defined data bundles, they may override some of the previous settings
-        if report_format == 'html':
+        # NOTE since reports are pre-defined data bundles, they may override some of the previous settings
+        if report_format == "html":
             # generate a reporthtml string
             reporthtml = self.GenerateReport(heatmap_cmap=heatmap_cmap)
             # write all datatets to dedicated subfolders
@@ -3191,12 +3288,12 @@ class MoltenProtFitMultiple:
                 file.write(reporthtml)
             output_kwargs["xlsx"] = True
             output_kwargs["genpics"] = True
-            output_kwargs['no_data'] = False
-        elif report_format == 'xlsx':
-            self.CombineResults(os.path.join(outfolder, 'report.xlsx'), -1, -1, False)
-        elif report_format == 'pdf':
-            output_kwargs['pdf'] = True
-            
+            output_kwargs["no_data"] = False
+        elif report_format == "xlsx":
+            self.CombineResults(os.path.join(outfolder, "report.xlsx"), -1, -1, False)
+        elif report_format == "pdf":
+            output_kwargs["pdf"] = True
+
         # write output in parallel or serially
         if parallelization and n_jobs > 1:
             if len(self.GetDatasets()) == 1:
@@ -3282,14 +3379,15 @@ Functions to create a MoltenProtFitMultiple instance from a specific
 experimental data file.
 """
 
+
 def _csv_helper(filename, sep, dec):
-    '''
+    """
     Pre-processing steps for reading CSV files
     
     Returns
     -------
     pd.DataFrame with Temperature as index
-    '''
+    """
     try:
         data = pd.read_csv(
             filename, sep=sep, decimal=dec, index_col="Temperature", encoding="utf-8"
@@ -3342,7 +3440,7 @@ def parse_plain_csv(
 
     # read the CSV into a DataFrame
     data = _csv_helper(filename, sep, dec)
-    
+
     # read layout (if provided)
     if layout is not None:
         try:
@@ -3364,6 +3462,7 @@ def parse_plain_csv(
     output.AddDataset(data, readout)
     return output
 
+
 def parse_spectrum_csv(
     filename,
     scan_rate=None,
@@ -3372,7 +3471,7 @@ def parse_spectrum_csv(
     dec=defaults["dec"],
     readout=defaults["readout"],
 ):
-    '''
+    """
     Parse CSV file with columns Temperature,wavelengths...
     
     Parameters
@@ -3393,31 +3492,33 @@ def parse_spectrum_csv(
     -----
     * Temperature axis is not sorted
     * Layouts are generated automatically from column names (assumed to be respective wavelengths)
-    '''
+    """
     data = _csv_helper(filename, sep, dec)
-    
+
     # if data is too big, take a random subset
-    if len(data.columns)>96:
-        print(f"Warning: too many wavelengths in the spectrum ({len(data.columns)}), selecting random 96")
+    if len(data.columns) > 96:
+        print(
+            f"Warning: too many wavelengths in the spectrum ({len(data.columns)}), selecting random 96"
+        )
         data = data.sample(n=96, axis=1)
     # to be on the safe side, sort columns ascending
     data = data.loc[:, sorted(data.columns)]
     # apply the alphanumeric index
     data = data.T
-    data['ID'] = list(alphanumeric_index[:len(data)])
-    data.index.name = 'Condition'
+    data["ID"] = list(alphanumeric_index[: len(data)])
+    data.index.name = "Condition"
     data.reset_index(inplace=True)
-    
+
     # set ID as index
-    data.set_index('ID', inplace=True)
+    data.set_index("ID", inplace=True)
     # extract layout info and drop from the main df
     # initialize the layout dataframe
-    layout = pd.DataFrame(index=alphanumeric_index, columns = ['Condition'])
-    layout.index.name = 'ID'
-    layout.loc[data.index, 'Condition'] = data.loc[:, 'Condition'].copy()
-    data.drop(['Condition'], axis=1, inplace=True)
+    layout = pd.DataFrame(index=alphanumeric_index, columns=["Condition"])
+    layout.index.name = "ID"
+    layout.loc[data.index, "Condition"] = data.loc[:, "Condition"].copy()
+    data.drop(["Condition"], axis=1, inplace=True)
     data = data.T
-    
+
     # initialize and return a MoltenProtFitMultiple instance
     output = MoltenProtFitMultiple(
         scan_rate=scan_rate, denaturant=denaturant, layout=layout, source=filename
@@ -3425,7 +3526,8 @@ def parse_spectrum_csv(
     output.AddDataset(data, readout)
     return output
 
-def parse_prom_xlsx(filename, raw=False, refold=False, LE=False, deltaF=True):
+
+def parse_prom_xlsx(filename, raw=False, refold=False, LE=False, deltaF=True, panta_rhei=False, refine_scan_rate=True):
     """
     Parse a processed file from Prometheus NT.48. In these files temperature
     is always in Celsius and the readouts are more or less known. Layout is read
@@ -3440,11 +3542,15 @@ def parse_prom_xlsx(filename, raw=False, refold=False, LE=False, deltaF=True):
     refold : bool
         if refolding ramp was used (default False)
     LE : bool
-        instead of standard instance, create the one with Lumry-Eyring model
+        instead of standard instance, create the one with the Lumry-Eyring model
     deltaF : bool
         compute an alternative signal-enhanced readout: F350-F330 difference
         it is an extensive readout (proportional to protein conc, like F330 or F350),
         which also makes the transitions more pronounced (like Ratio)
+    panta_rhei : bool
+        indicate if the data was exported from Prometheus Panta; if True, raw refold and deltaF flags are overridden
+    refine_scan_rate : bool
+        do not refine the scan rate (e.g. when the info is not present in the data)
     
     Returns
     -------
@@ -3474,9 +3580,17 @@ def parse_prom_xlsx(filename, raw=False, refold=False, LE=False, deltaF=True):
 
     layout = input_xlsx["Overview"]
     layout.reset_index(inplace=True)
-    # read scan rate from first row in column "Temperature Slope"
-    # NOTE without conversion to float scan_rate (even if 1) will be saved to JSON as "null"!
-    scan_rate = float(layout["Temperature Slope"].iloc[0])
+    
+    # determine the scan rate
+    if 'Temperature Slope' in layout.columns:
+        # read scan rate from first row in column "Temperature Slope"
+        # NOTE without conversion to float scan_rate (even if 1) will be saved to JSON as "null"!
+        scan_rate = float(layout["Temperature Slope"].iloc[0])
+    else:
+        # this happens in Panta files, but the overview sheet can be hacked
+        print('Warning: cannot determine the scan rate, assuming 1 degree/min; it is recommended to add column \"Temperature Slope\" (without quotes) to the Overview sheet and set the correct value for all samples; scan rate is only relevant for kinetic analyses')
+        scan_rate = 1.
+        refine_scan_rate = False
 
     layout = layout.reindex(["Capillary", "Sample ID", "dCp"], axis=1)
     layout.rename(columns={"Sample ID": "Condition"}, inplace=True)
@@ -3493,27 +3607,75 @@ def parse_prom_xlsx(filename, raw=False, refold=False, LE=False, deltaF=True):
         output = MoltenProtFitMultiple(
             scan_rate=scan_rate, layout=layout, denaturant="C", source=filename
         )
-
+    
     # cycle through available readouts and add them to MPMultiple
     if refold:
         # Full list of readouts, currently only unfolding can be processed
         # TODO add a class to process refolding data in conjunction with unfolding
         readouts = (
-            u"Ratio (Unfolding)",
-            u"330nm (Unfolding)",
-            u"350nm (Unfolding)",
-            u"Scattering (Unfolding)",
-            u"Ratio (Refolding)",
-            u"330nm (Refolding)",
-            u"350nm (Refolding)",
-            u"Scattering (Refolding)",
+            "Ratio (Unfolding)",
+            "330nm (Unfolding)",
+            "350nm (Unfolding)",
+            "Scattering (Unfolding)",
+            "Ratio (Refolding)",
+            "330nm (Refolding)",
+            "350nm (Refolding)",
+            "Scattering (Refolding)",
         )
         output.print_message(
             "Currently refolding data is treated separately from unfolding data", "w"
         )
+    elif panta_rhei:
+        # Panta XLSX export contains a single consolidated table, which is split to mimic the "classic" raw XLSX
+        # Panta cols: temp1_cap1,readout1_cap1,temp2_cap1,readout2_cap1,...
+        # raw cols  : cap1,cap1,cap1,cap2,cap2,cap2
+        #             time,temp,readout,...
+        consolidated_table = input_xlsx['Data Export']
+        n_capillaries = len(output.layout.loc[output.layout.Capillary.notna(), :])
+        readouts_per_capillary = len(consolidated_table.columns) // n_capillaries # should be the difference, 21?
+        readouts = []
+
+        # NOTE assuming that each capillary has the same set of readouts, so the leftover should be zero here
+        assert len(consolidated_table.columns) % n_capillaries == 0
+
+        # cycle through each readout type, first use slices to select relevant temp and 
+        for i in range(0,readouts_per_capillary,2):
+            # temperature values for all capillaries
+            temp = consolidated_table.iloc[:, i::readouts_per_capillary] 
+            # readout for all capillaries
+            data = consolidated_table.iloc[:, i+1::readouts_per_capillary]
+            
+            # extract the name of the readout and skip derivative if detected
+            readout_name = data.columns[0]
+            if 'deriv' in readout_name.lower():
+                continue
+            # For simplicity, only the first word is taken to name the readout
+            readout_name = readout_name.split()[0]
+            
+            # combine columns from temp and data as expected for classic raw format
+            xlsx_sheet = None
+            for temp_col, data_col in zip(temp.columns, data.columns):
+                data_to_add = [temp.loc[:, [temp_col, temp_col]], data.loc[:, data_col]]
+                if xlsx_sheet is None:
+                    xlsx_sheet = pd.concat(data_to_add, axis=1)
+                else:
+                    xlsx_sheet = pd.concat([xlsx_sheet, *data_to_add], axis=1)
+            # HACK "classic" parser removes the first row, so we can fill it wit zeros
+            empty_row = pd.Series(0., index=range(len(xlsx_sheet.columns)))
+            # NOTE at this point the original column names are gone
+            xlsx_sheet = pd.concat([empty_row, xlsx_sheet.T.reset_index(drop=True)], axis=1).T
+            
+            # update the main dict from xlsx and the list of available readouts
+            input_xlsx[readout_name] = xlsx_sheet
+            readouts.append(readout_name)
+        
+        # Override some of the parsing values values
+        raw = True
+        deltaF = False
+        refold = False
     else:
         readouts = ("Ratio", "330nm", "350nm", "Scattering")
-    
+
     # NOTE to avoid multiple checks of the scan rate (temp and time scale are the same for all readouts)
     refined_scan_rate = None
     for i in readouts:
@@ -3526,18 +3688,17 @@ def parse_prom_xlsx(filename, raw=False, refold=False, LE=False, deltaF=True):
             """
             data = data[data.iloc[:, 0].notna()]
             data = data.iloc[1:, :]
-            
             if raw:
                 # warn the user that there is a potentially harmful data modification
                 output.print_message(
-                "Import of raw data requires interpolation to have all readings on the same temperature scale, i.e. the data gets irreversibly modified",
-                "w",
-            )
+                    "Import of raw data requires interpolation to have all readings on the same temperature scale, i.e. the data gets irreversibly modified",
+                    "w",
+                )
                 # in proc data currently there will be: shared time, shared temp, readings
                 # in raw data there are 3 columns for each sample: time, temperature, readings
                 # NOTE in some older versions of the raw data the time and temperature are actually the same!
                 # care must be taken if scan_rate is determined from such files
-                
+
                 # extract readings, temperatures and times
                 readings = data.iloc[:, 2::3].copy()
                 temps = data.iloc[:, 1::3]
@@ -3550,18 +3711,22 @@ def parse_prom_xlsx(filename, raw=False, refold=False, LE=False, deltaF=True):
                     r_col = readings.columns[col_ix]
                     t_col = temps.columns[col_ix]
                     # interpolation function
-                    interpolator = interp1d(temps[t_col], readings[r_col], bounds_error=False)
+                    interpolator = interp1d(
+                        temps[t_col], readings[r_col], bounds_error=False
+                    )
                     # interpolated values for readings'
                     readings.loc[:, r_col] = interpolator(temp_scale)
                 # add time and temperature of the first sample to the output data
                 data = pd.concat([time_scale, temp_scale, readings], axis=1)
 
             # determine true scan rate by running a linear fit of temperature vs time
-            if refined_scan_rate is None:
+            if (refined_scan_rate is None) and refine_scan_rate :
                 temp_vs_time = data.iloc[:, :2].astype(float).dropna()
-                slope, intercept = np.polyfit(temp_vs_time.iloc[:, 0],temp_vs_time.iloc[:, 1], 1)
-                refined_scan_rate = slope * 60 # convert degC/sec to degC/min
-            
+                slope, intercept = np.polyfit(
+                    temp_vs_time.iloc[:, 0], temp_vs_time.iloc[:, 1], 1
+                )
+                refined_scan_rate = slope * 60  # convert degC/sec to degC/min
+
             # remove the first column with time
             data.drop(data.columns[0], inplace=True, axis=1)
             # rename the first column to "Temperature"
@@ -3572,12 +3737,12 @@ def parse_prom_xlsx(filename, raw=False, refold=False, LE=False, deltaF=True):
             data.columns = list(alphanumeric_index.iloc[0 : len(data.columns)])
             # for compatibility with future pandas versions we must make sure that data type is float32
             data = data.apply(pd.to_numeric, errors="coerce")
-            
+
             # Create a MoltenProtFit instance with this DataFrame as data source
             output.AddDataset(data, i)
         else:
             output.print_message("Readout {} not found".format(i), "w")
-    
+
     if deltaF:
         # check if F330 and F350 are available
         if set(["330nm", "350nm"]).issubset(output.GetDatasets()):
@@ -3607,14 +3772,19 @@ def parse_prom_xlsx(filename, raw=False, refold=False, LE=False, deltaF=True):
     # Check if any datasets could be properly added
     if len(output.datasets) < 1:
         raise ValueError("Input file {} contains no data".format(filename))
-    
+
     # assign refined scan_rate
-    if abs(refined_scan_rate - output.scan_rate) > 0.2:
-        # in range 1-7 degC/min the difference between nominal and true rate is less than 0.2 deg/min
-        output.print_message(f"The difference between nominal ({output.scan_rate}) and estimated ({refined_scan_rate}) scan rate >0.2 degrees/min", "w")
-    output.SetScanRate(refined_scan_rate)
+    if refine_scan_rate:
+        if abs(refined_scan_rate - output.scan_rate) > 0.2:
+            # in range 1-7 degC/min the difference between nominal and true rate is less than 0.2 deg/min
+            output.print_message(
+                f"The difference between nominal ({output.scan_rate}) and estimated ({refined_scan_rate}) scan rate >0.2 degrees/min",
+                "w",
+            )
+        output.SetScanRate(refined_scan_rate)
 
     return output
+
 
 def mp_from_json(input_file):
     """

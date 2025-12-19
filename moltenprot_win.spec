@@ -5,7 +5,7 @@ block_cipher = None
 
 a = Analysis(['moltenprot\\__main__.py'],
              binaries=[],
-             datas=[('.\\moltenprot\\VERSION', 'moltenprot'), ('.\\COPYING', 'moltenprot'), ('.\\moltenprot\\doc\\index.pdf', 'help'), ('.\\moltenprot\\resources\\report.template', 'moltenprot\\resources\\')],
+             datas=[('.\\moltenprot\\VERSION', 'moltenprot'), ('.\\COPYING', 'moltenprot'), ('.\\moltenprot\\resources\\report.template', 'moltenprot\\resources\\')],
              hiddenimports=['scipy.special.cython_special'],
              hookspath=[],
              runtime_hooks=[],

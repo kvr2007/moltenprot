@@ -66,13 +66,13 @@ class MoltenProtModel:
         For interactive prompts or print() - show the model description
         """
         return self._description
-    
+
     def __str__(self):
         """
         When converting to a string return the short name
         """
         return self.short_name
-    
+
     def param_names(self):
         """
         Return parameter names encoded in the function declaration as a list
@@ -149,6 +149,7 @@ class EquilibriumThreeState(MoltenProtModel):
     _description = "N <-> I <-> U"
     # in theory total stability of the protein is the sum of stabilities of N and I
     sortby = "dG_comb_std"
+
     def fun(self, T, kN, bN, kU, bU, kI, dHm1, T1, dHm2, dT2_1):
         # dT2_1 = T2 - T1, i.e. the distance between the two transitions
         return (
@@ -161,7 +162,8 @@ class EquilibriumThreeState(MoltenProtModel):
         ) / (
             1
             + np.exp(dHm1 / R * (1 / T1 - 1 / T))
-            + np.exp(dHm1 / R * (1 / T1 - 1 / T)) * np.exp(dHm2 / R * (1 / (T1 + dT2_1) - 1 / T))
+            + np.exp(dHm1 / R * (1 / T1 - 1 / T))
+            * np.exp(dHm2 / R * (1 / (T1 + dT2_1) - 1 / T))
         )
 
     def param_bounds(self, input_data=None):
@@ -183,7 +185,7 @@ class EquilibriumThreeState(MoltenProtModel):
                     -np.inf,
                     0,
                     # allow dT2_1 to be +/-
-                    #-(max(input_data.index) - min(input_data.index)) / 3,
+                    # -(max(input_data.index) - min(input_data.index)) / 3,
                 ),
                 (
                     np.inf,
