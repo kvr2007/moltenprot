@@ -33,16 +33,19 @@ setup(name='moltenprot',
       url='',# is required
       include_package_data=True,
       packages=['moltenprot'],
+      python_requires="<3.11",
       install_requires=[
-          'pandas',
-          'scipy',
+          'pandas<2.0',
+          'numpy<2.0',
+          'scipy>=1.10',
           'openpyxl',
           'xlrd',
-          'matplotlib',
-          # GUI and parallelization are not essential features
-          #'pyqt',
-          #'joblib',
+          'matplotlib>=3.7',
       ],
+      extras_require = {
+          'gui':['pyqt5'],
+          'multiproc' : ['joblib<1.0']
+          },
       # shortcuts to be installed system-wide
       entry_points={
           'console_scripts': [

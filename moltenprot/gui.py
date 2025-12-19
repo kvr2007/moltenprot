@@ -1442,8 +1442,8 @@ class MoltenProtMainWindow(QMainWindow):
         screenWidth = wid.screen().width()
         screenHeight = wid.screen().height()
         self.moltenProtToolBox.setGeometry(
-            (screenWidth / 2) - (width / 2),
-            (screenHeight / 2) - (height / 2),
+            int((screenWidth / 2) - (width / 2)),
+            int((screenHeight / 2) - (height / 2)),
             width,
             height,
         )
@@ -1759,9 +1759,9 @@ class MoltenProtMainWindow(QMainWindow):
                     self.processXLSX(filename)
                 self.status_text.setText("Loaded " + filename)
                 self.fileLoaded = True
-            except ValueError as e:
+            except (ValueError, KeyError) as e: # KeyError is raised when a regular XLSX file is opened with panta_rhei settings
                 # TODO currently the previous data/layout is left around even though the file could not open
-                QMessageBox.warning(self, "MoltenProt Open File Error", str(e))
+                QMessageBox.warning(self, "MoltenProt Open File Error", f"The input file cannot be opened due to error:\n {e}\n check if the correct file is selected and if import settings are appropriate")
                 self.status_text.setText("Requested file could not be opened.")
                 # reset the GUI
                 self.resetGUI()
