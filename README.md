@@ -1,5 +1,5 @@
 # MoltenProt
-![screenshot of main window](moltenprot/doc/MainWindow.png)
+![screenshot of main window](moltenprot/ui/splashscreen.png)
 
 MoltenProt is a graphical and command-line application for fitting protein thermal unfolding data. For more details see the publication:
 
@@ -19,11 +19,11 @@ If you have python (versions 3.8-3.10) available on your system, you can install
 
     a. Windows:
     
-        `venv\Scripts\activate`
+    `venv\Scripts\activate`
         
     b. GNU/Linux and Mac:
     
-        `source venv/bin/activate`
+    `source venv/bin/activate`
 
 3. Install the MoltenProt package from this repo:
     
@@ -33,9 +33,9 @@ If you have python (versions 3.8-3.10) available on your system, you can install
 
 You can now launch the GUI with command `moltenprot_gui` or access the CLI with `moltenprot`.
 
-For additional documentation see [INSTALL](INSTALL).
+For additional documentation see [INSTALL](INSTALL.md).
 
-[CHANGELOG](CHANGELOG)
+[CHANGELOG](CHANGELOG.md)
 
 ### Pre-packaged binaries
 
@@ -46,6 +46,14 @@ http://marlovitslab.org/lab/Download.html
 ## Usage
 
 User guide is available in [PDF format](moltenprot/doc/index.pdf) and also from the GUI "Help > MoltenProt help".
+
+## Survey
+
+If you regularly use MoltenProt, please consider filling out the usage survey:
+
+[MoltenProt Survey](https://forms.gle/EacRgkQXfad4JnZx7)
+
+No sensitive data is collected in the survey, and it will help prioritize future developments.
 
 ## Getting help
 
