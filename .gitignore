@@ -100,3 +100,6 @@ commit_msg
 
 # LO lock file
 .~lock.*.odt#
+
+# random notes
+Notes.md
