@@ -1,3 +1,7 @@
+# 0.3.2-alpha
+* Added parser for next-generation NanoDSF device
+* Fixes to the installer
+
 # 0.3.1-alpha
 * PDF reports!
 * Support for "raw" XLSX input
