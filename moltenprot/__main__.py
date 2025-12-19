@@ -361,7 +361,7 @@ def MoltenprotCLI(args):
     # print citation and exit
     if args.citation:
         print(
-            "\nIf you found MoltenProt helpful in your work, please cite:\nKotov et al., Biophysical Journal. 116, 191a (2019)\ndoi: 10.1016/j.bpj.2018.11.1060\n"
+            "\nIf you found MoltenProt helpful in your work, please cite:\nKotov et al., Protein Science (2021)\ndoi: 10.1002/pro.3986\n"
         )
         sys.exit(0)
 

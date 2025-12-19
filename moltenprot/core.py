@@ -566,7 +566,7 @@ class MoltenProtFit:
             # all manipulations are done by deserialize function
             pass
         else:
-            #NOTE the logic of overwriting etc is handled by CLI/GUI code
+            # NOTE the logic of overwriting etc is handled by CLI/GUI code
             self.resultfolder = None
             # attribute to hold diagnostic messages.
             self.protocolString = ""
@@ -673,13 +673,10 @@ class MoltenProtFit:
         for i in output.index:
             for j in output.columns:
                 a = i + str(j)
-                try:
-                    output.loc[[i], [j]] = self.plate_results[use_column][a]
-                except KeyError:
-                    # this message is triggered whenever a heatmap is not complete
-                    # if self.debug:
-                    #    print("Value for well {} not available".format(a))
-                    pass
+                if (use_column in self.plate_results.columns) and (
+                    a in self.plate_results.index
+                ):
+                    output.loc[[i], [j]] = self.plate_results.loc[a, use_column]
 
         # if reference value is supplied, subtract it from the values
         if reference is not None:
@@ -709,16 +706,15 @@ class MoltenProtFit:
         # bring everything to range 0-1
         # normalize by max value (this way we make sure that Nans changed to 1000 are out of range)
         # NOTE in some rare cases, when there is only one sample left and it has value 0 in plate96
-        if min(output.min()) == max(output.max()):
+        min_val = output.min().min()
+        max_val = output.max().max()
+        if min_val == max_val:
             self.print_message(
                 "Only one sample left after pre-processing and fitting!", "w"
             )
             output = output * 0
         else:
-            output = (output - min(output.min())) / (
-                max(output.max()) - min(output.min())
-            )
-
+            output = (output - min_val) / (max_val - min_val)
         # make all Nan's equal to 1000
         output.fillna(1000, inplace=True)
         return output
@@ -990,7 +986,7 @@ class MoltenProtFit:
                         "Tm_init", input_series.name
                     ] = self.plate_derivative[input_series.name].idxmax()
                 elif b_diff < 0:
-                    # high to low curve - use min of the deriv as Tm_init
+                    # high-to-low curve - use min of the deriv as Tm_init
                     self.plate_results.loc[
                         "Tm_init", input_series.name
                     ] = self.plate_derivative[input_series.name].idxmin()
@@ -1343,7 +1339,7 @@ class MoltenProtFit:
         else:
             return False
 
-    def testWellID(self, wellID):
+    def testWellID(self, wellID, ignore_results=False):
         """
         Check if a well exists in self.plate_results (return True), otherwise return False
         
@@ -1351,11 +1347,16 @@ class MoltenProtFit:
         ----------
         wellID
             sample ID to check
+        ignore_results: bool
+            if True, will look for the ID's in plate_raw, even if self.plate_results exists
         """
         # check if analysis was done, and depending on that choose the index to check
         if "plate_results" in self.__dict__:
             index_tocheck = self.plate_results.index
         else:
+            index_tocheck = self.plate_raw.columns
+
+        if ignore_results:
             index_tocheck = self.plate_raw.columns
 
         if wellID in index_tocheck:
@@ -1369,7 +1370,6 @@ class MoltenProtFit:
         """
 
         if "plate_results" in self.__dict__:
-            print(self.model)
             output = [self.plate_results.iloc[:, -1].name] + self.plotlines
 
             # BS-factor is more useful than S, but not always available
@@ -1421,7 +1421,7 @@ class MoltenProtFit:
         self.savgol = savgol
 
         self.blanks = blanks
-        self.exclude = exclude  # previously the attribute was called user_excluded
+        self.exclude = exclude
         self.invert = invert
         # to avoid confustion, medfilt is the imported method, mfilt is the respective analysis flag
         self.mfilt = mfilt
@@ -1723,6 +1723,8 @@ class MoltenProtFit:
             index=result_index, columns=self.plate.columns.values, dtype="float64"
         )
 
+        # an empty p0 variable
+        p0 = []
         # run a cycle through all columns and calculate fits
         self.print_message("Fitting curves...", "i")
 
@@ -2541,7 +2543,6 @@ class MoltenProtFitMultiple:
         BUG this method does not use the MPF.SetLayout, which makes code redundant
         layouts are set only at SetAnalysisOptions state
         """
-
         for dataset_id, mp_fit in self.datasets.items():
             mp_fit.layout = self.layout
             # also update the layout info in plate_results (if present)
@@ -3106,20 +3107,20 @@ def parse_prom_xlsx(filename, refold=False, LE=False, deltaF=True):
 
     # cycle through available readouts and add them to MPMultiple
     if refold:
-        """
         # Full list of readouts, currently only unfolding can be processed
-        # To support refolding data a separate class must be introduced
-        readouts = (u'Ratio (Unfolding)', u'330nm (Unfolding)', u'350nm (Unfolding)', u'Scattering (Unfolding)',
-                    u'Ratio (Refolding)', u'330nm (Refolding)', u'350nm (Refolding)', u'Scattering (Refolding)',)
-        """
-        output.print_message(
-            "Only unfolding data is processed in unfolding/refolding dataset", "w"
-        )
+        # TODO add a class to process refolding data in conjunction with unfolding
         readouts = (
-            "Ratio (Unfolding)",
-            "330nm (Unfolding)",
-            "350nm (Unfolding)",
-            "Scattering (Unfolding)",
+            u"Ratio (Unfolding)",
+            u"330nm (Unfolding)",
+            u"350nm (Unfolding)",
+            u"Scattering (Unfolding)",
+            u"Ratio (Refolding)",
+            u"330nm (Refolding)",
+            u"350nm (Refolding)",
+            u"Scattering (Refolding)",
+        )
+        output.print_message(
+            "Currently refolding data is treated separately from unfolding data", "w"
         )
     else:
         readouts = ("Ratio", "330nm", "350nm", "Scattering")

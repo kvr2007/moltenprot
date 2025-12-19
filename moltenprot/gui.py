@@ -330,9 +330,7 @@ class LayoutDialog(QDialog):
 
     @pyqtSlot()
     def on_blankAction(self):
-        # print 'on_blankAction'
         for currentQTableWidgetItem in self.ui.tableWidget.selectedItems():
-            # print currentQTableWidgetItem.row(), currentQTableWidgetItem.column(), currentQTableWidgetItem.text(),  currentframe().f_lineno,  cfFilename
             currentQTableWidgetItem.setText("Blank")
 
     @pyqtSlot()
@@ -861,11 +859,6 @@ class MoltenProtMainWindow(QMainWindow):
         ## \brief  This member holds the instance of sortScoreCombBoxAction object.
         #    \details This member is created in populateAndShowSortScoreComboBox method. \sa populateAndShowSortScoreComboBox
         self.sortScoreCombBoxAction = None
-        ## \brief  This member holds the instance of datasetComboBoxAction object.
-        #    \details This member is created in showHeatmapMultipleComboBoxAccording2FileType method. \sa showHeatmapMultipleComboBoxAccording2FileType
-        self.datasetComboBoxAction = None
-        ## \brief  This member is used to show/hide HeatmapMultipleComboBox GUI element.
-        self.showHeatmapMultipleComboBox = False
         ## \brief This member holds user personal settings.
         #   \details At present moment this object holds last working directory. \sa lastDir
         self.settings = QSettings()
@@ -884,7 +877,6 @@ class MoltenProtMainWindow(QMainWindow):
         ## Plotting-related constants
         ## \brief  This member controls the legend placement on the main plot.
         self.legendLocation = "best"
-
 
         self.setWindowTitle("MoltenProt Main Window")
         # Set dimensions of experimental and layout data. Those dimensions are used in createButtonArray, editLayout methods.
@@ -928,10 +920,9 @@ class MoltenProtMainWindow(QMainWindow):
         self.createStatusBar()
 
         self.initDialogs()
+        # NOTE some dialogs must be visible only when a file is loaded
+        self.hideActions()
 
-        self.mainWindow.actionSelectAll.setVisible(False)
-        self.mainWindow.actionDeselectAll.setVisible(False)
-        self.mainWindow.actionAnalysis.setVisible(False)
         self.setRunAnalysisCounterLabel()
         self.on_show()
 
@@ -1052,7 +1043,7 @@ class MoltenProtMainWindow(QMainWindow):
         # analysis_defaults - options related to analysis
         # prep_defaults - options related to data preprocessing
         # defaults - uncategorized options
-        #TODO Is it necessary to copy all values here??
+        # TODO Is it necessary to copy all values here??
         self.model = core.analysis_defaults["model"]
         self.baseline_fit = core.analysis_defaults["baseline_fit"]
         self.baseline_bounds = core.analysis_defaults["baseline_bounds"]
@@ -1164,7 +1155,7 @@ class MoltenProtMainWindow(QMainWindow):
         # step 3: prepare the canvas
         self.axisClear()
         self.on_deselectAll()
-        self.moltenProtToolBox.ui.curveLegendCheckBox.setChecked(False)
+        # self.moltenProtToolBox.ui.curveLegendCheckBox.setChecked(False)
         self.canvas.draw()
 
         # step 4: run analysis
@@ -1199,6 +1190,7 @@ class MoltenProtMainWindow(QMainWindow):
             )
             self.populateAndShowSortScoreComboBox()
             self.setButtonsStyleAccordingToNormalizedData()
+
             self.settings.setValue(
                 "settings/analysisRunsCounter", self.analysisRunsCounter
             )
@@ -1208,7 +1200,7 @@ class MoltenProtMainWindow(QMainWindow):
                     self,
                     "We need your feedback!",
                     """<p>You have processed {} curves with MoltenProt! Would you like to complete a survey?</p> 
-            <p><a href="http://marlovitslab.org/moltenprot-survey">https://marlovitslab.org/moltenprot-survey</a></p>""".format(
+            <p>Follow the link provided on the <a href="http://marlovitslab.org/lab/Download.html">download page</a> or click <a href="https://forms.gle/EacRgkQXfad4JnZx7">here</a>. </p>""".format(
                         self.analysisRunsCounter
                     ),
                     buttons=QMessageBox.Close,
@@ -1236,10 +1228,7 @@ class MoltenProtMainWindow(QMainWindow):
         if len(available_datasets) < 1:
             raise ValueError("No datasets selected for analysis")
         self.moltenProtFit = self.moltenProtFitMultiple.datasets[available_datasets[0]]
-        self.datasetComboBox.clear()
-        self.datasetComboBox.insertItems(1, available_datasets)
-        width = self.datasetComboBox.minimumSizeHint().width()
-        self.datasetComboBox.setMinimumWidth(width)
+        self.populateDatasetComboBox(available_datasets)
 
         # count the total number of curves processed and add to the global counter
         for dataset in self.moltenProtFitMultiple.GetDatasets():
@@ -1338,12 +1327,9 @@ class MoltenProtMainWindow(QMainWindow):
         self.curveViewComboboxCurrentText = (
             self.moltenProtToolBox.ui.curveViewComboBox.currentText()
         )
-        # TODO after plot settings are changed it is a good idea to clean up the axes
-        # print self.curveMarkEverySpinBoxValue,  self.curveTypeComboboxCurrentText, self.curveViewComboboxCurrentText,  cfFilename, currentframe().f_lineno
+        # clean up the axes after plot settings are changed
         self.axisClear()
         self.on_deselectAll()
-        # self.showDerivativeSubplotAction.setVisible(True)
-        # self.showLegendAction.setChecked(False)
         self.canvas.draw()
 
     ## \brief This method  creates toolbox dialog.
@@ -1573,7 +1559,8 @@ class MoltenProtMainWindow(QMainWindow):
             self,
             "Cite MoltenProt",
             """<p>If you found MoltenProt helpful in your work, please cite: </p> 
-         <p><a href="https://www.cell.com/biophysj/fulltext/S0006-3495(18)32325-7">Kotov et al., Biophysical Journal. 116, 191a (2019)</a></p>""",
+            <p>Kotov et al., Protein Science (2021)</p>
+         <p><a href="https://dx.doi.org/10.1002/pro.3986">doi: 10.1002/pro.3986</a></p>""",
         )
 
     ## \brief This SLOT is called when user clicks <b>Help</b> menu item and shows the MoltenProt help system main window.
@@ -1648,7 +1635,6 @@ class MoltenProtMainWindow(QMainWindow):
             self.lastDir = fileInfo.canonicalPath()
             self.settings.setValue("settings/lastDir", self.lastDir)
             self.settings.sync()
-            # print type(self.lastDir),  self.lastDir,  cfFilename,  currentframe().f_lineno
             self.grayButtonsNames = []
             self.firstPlot = True
             self.filetypeIsCsv = False
@@ -1657,8 +1643,6 @@ class MoltenProtMainWindow(QMainWindow):
             self.resetButtons()
             if self.sortScoreCombBoxAction != None:
                 self.sortScoreCombBoxAction.setVisible(False)
-            if self.datasetComboBoxAction != None:
-                self.datasetComboBoxAction.setVisible(False)
             self.dataProcessed = False
             if filename.endswith(".csv"):
                 self.filetypeIsCsv = True
@@ -1688,9 +1672,11 @@ class MoltenProtMainWindow(QMainWindow):
                 self.status_text.setText("Loaded " + filename)
                 self.fileLoaded = True
             except ValueError as e:
-                # print(e.__str__)
+                # TODO currently the previous data/layout is left around even though the file could not open
                 QMessageBox.warning(self, "MoltenProt Open File Error", str(e))
                 self.status_text.setText("Requested file could not be opened.")
+                # reset the GUI
+                self.resetGUI()
                 self.fileLoaded = False
 
             # done regarless of file loading success
@@ -1707,7 +1693,6 @@ class MoltenProtMainWindow(QMainWindow):
                 self.showHideSelectDeselectAll(False)
                 self.enableButtons()
                 self.showOnlyValidButtons()
-                self.showHeatmapMultipleComboBoxAccording2FileType()
                 self.prepareAnalysisTableView()
 
                 # Overwrite default analysis settings if input file was JSON and was processed
@@ -1718,7 +1703,7 @@ class MoltenProtMainWindow(QMainWindow):
                     ###TODO restore default analysis settings
                     pass
 
-                # actions in case the data was processed (JSON only?)
+                # actions in case the data was processed (JSON only)
                 if self.moltenProtFit.analysisHasBeenDone():
                     if showVersionInformation:
                         print(
@@ -1743,7 +1728,22 @@ class MoltenProtMainWindow(QMainWindow):
             QMessageBox.warning(
                 self, "MoltenProt Open File Error", "Input file not readable"
             )
+            self.resetGUI()
+    
+    def populateDatasetComboBox(self, available_datasets):
+        # Adds datasets from the list to the respective combobox
+        # if there is one or no datasets, the combobox is hidden
+        self.datasetComboBox.clear()
+        if len(available_datasets) <= 1:
+            self.datasetComboBoxAction.setVisible(False)
+        else:
+            self.datasetComboBox.insertItems(1, available_datasets)
+            width = self.datasetComboBox.minimumSizeHint().width()
+            self.datasetComboBox.setMinimumWidth(width)
+            self.datasetComboBoxAction.setVisible(True)
 
+        
+    
     ## \brief This method is used to process CSV file named filename
     #   \param filename - CSV file to process.
     #   \todo Debug print is used here.
@@ -1755,13 +1755,11 @@ class MoltenProtMainWindow(QMainWindow):
         self.scanRateValue = self.moltenProtToolBox.ui.scanRateSpinBox.value()
 
         self.moltenProtFitMultiple = core.parse_plain_csv(
-            filename,
-            sep=self.sepValue,
-            dec=self.decValue,
-            scan_rate=self.scanRateValue
+            filename, sep=self.sepValue, dec=self.decValue, scan_rate=self.scanRateValue
         )
         available_datasets = self.moltenProtFitMultiple.GetDatasets()
         self.moltenProtFit = self.moltenProtFitMultiple.datasets[available_datasets[0]]
+        self.populateDatasetComboBox(available_datasets)
 
     ## \brief This method is used to process JSON file named filename
     #   \param filename - JSON file to process.
@@ -1771,7 +1769,6 @@ class MoltenProtMainWindow(QMainWindow):
         jsonData = core.mp_from_json(filename)
         if isinstance(jsonData, core.MoltenProtFitMultiple):
             self.moltenProtFitMultiple = jsonData
-            self.showHeatmapMultipleComboBox = True
 
             # do not show datasets that were marked as skipped in the combobox
             available_datasets = self.moltenProtFitMultiple.GetDatasets(no_skip=True)
@@ -1780,11 +1777,7 @@ class MoltenProtMainWindow(QMainWindow):
             ]
 
             # MPF2 dynamically populate heatmap combobox
-            self.datasetComboBox.clear()
-            self.datasetComboBox.insertItems(1, available_datasets)
-
-            width = self.datasetComboBox.minimumSizeHint().width()
-            self.datasetComboBox.setMinimumWidth(width)
+            self.populateDatasetComboBox(available_datasets)
 
             # TODO currently this only checks analysis completion only in one of MoltenProtFit instances
             if self.moltenProtFit.analysisHasBeenDone():
@@ -1813,18 +1806,12 @@ class MoltenProtMainWindow(QMainWindow):
     #   \param filename - XLSX file to process.
     #   \todo Debug print is used here.
     def processXLSX(self, filename):
-        # print 'processXLSX', filename, cfFilename, currentframe().f_lineno
-        self.showHeatmapMultipleComboBox = True
         refolding = self.moltenProtToolBox.ui.refoldingCheckBox.isChecked()
         self.moltenProtFitMultiple = core.parse_prom_xlsx(filename, refolding)
         available_datasets = self.moltenProtFitMultiple.GetDatasets()
         self.moltenProtFit = self.moltenProtFitMultiple.datasets[available_datasets[0]]
         # MPF2 dynamically populate heatmap combobox
-        self.datasetComboBox.clear()
-        self.datasetComboBox.insertItems(1, available_datasets)
-        width = self.datasetComboBox.minimumSizeHint().width()
-        self.datasetComboBox.setMinimumWidth(width)
-        # data.resultfolder = resultfolder
+        self.populateDatasetComboBox(available_datasets)
         # NOTE XLSX is always unprocessed, however, dataProcessed attribute
         # and the view of the plots must be reset from the previous run
         self.dataProcessed = False
@@ -1953,15 +1940,20 @@ class MoltenProtMainWindow(QMainWindow):
             for row in range(0, 8):
                 item = self.layoutDialog.ui.tableWidget.item(row, column)
                 alphanumeric_index = "ABCDEFGH"[row] + str(column + 1)
-                if item.text() != "":
-                    self.moltenProtFitMultiple.layout.loc[
-                        alphanumeric_index, "Condition"
-                    ] = item.text()
-                else:
-                    self.moltenProtFitMultiple.layout.loc[
-                        alphanumeric_index, "Condition"
-                    ] = None
 
+                # NOTE the layout is always 12x8, however, the data may have less samples
+                # do not assign layout to the data that is not present in plate_raw
+                if self.moltenProtFit.testWellID(
+                    alphanumeric_index, ignore_results=True
+                ):
+                    if item.text() != "":
+                        self.moltenProtFitMultiple.layout.loc[
+                            alphanumeric_index, "Condition"
+                        ] = item.text()
+                    else:
+                        self.moltenProtFitMultiple.layout.loc[
+                            alphanumeric_index, "Condition"
+                        ] = None
         # apply edited layout to all datasets inside MPFM
         self.moltenProtFitMultiple.UpdateLayout()
 
@@ -2005,7 +1997,6 @@ class MoltenProtMainWindow(QMainWindow):
             # NOTE during startup the values of the drop-down list
             # can be empty which would result in a crash
             if heatmaps[0] in self.moltenProtFit.getResultsColumns():
-                # print self.heatMapName,  cfFilename,  currentframe().f_lineno
                 self.normalizedData = self.moltenProtFit.converter96(heatmaps[0]) * 255
                 self.setButtonsStyle()
         else:
@@ -2114,9 +2105,6 @@ class MoltenProtMainWindow(QMainWindow):
                                     )
                                 if wellID not in self.grayButtonsNames:
                                     self.plotFigAny(wellID)
-                                else:
-                                    # print self.grayButtonsNames, cfFilename,  currentframe().f_lineno
-                                    None
         elif self.moltenProtFit is not None:
             for column in range(self.colsCount):
                 for row in range(self.rowsCount):
@@ -2143,11 +2131,6 @@ class MoltenProtMainWindow(QMainWindow):
     def getQColor(self, index):
         # self.colormap = cm.get_cmap(self.colormapNames[0],  96)
         self.colormap = cm.get_cmap(self.currentColorMap)
-        """
-        maps = sorted(m for m in cm.datad if not m.endswith("_r"))
-        maps = sorted(m for m in cm.datad )
-        print maps
-        """
         red = self.colormap(index)[0]
         green = self.colormap(index)[1]
         blue = self.colormap(index)[2]
@@ -2157,7 +2140,6 @@ class MoltenProtMainWindow(QMainWindow):
         qcolor.setGreenF(green)
         qcolor.setBlueF(blue)
         qcolor.setAlphaF(alpha)
-        # print qcolor.redF(),  qcolor.red()
         return qcolor
 
     def setButtonsStyle(self):
@@ -2204,7 +2186,6 @@ class MoltenProtMainWindow(QMainWindow):
         self.btn2DArray = [
             [0 for j in range(self.colsCount)] for i in range(self.rowsCount)
         ]
-        # styleString = "QPushButton {  border-width: 2px; border-color: black; background-color: rgb(%s, %s, %s) } " % (qcolor.red(), qcolor.green(), qcolor.blue()  ) + " QPushButton:checked { background-color: green; border-style: inset;}"
         self.gray = QColor.fromRgbF(0.501961, 0.501961, 0.501961, 1.000000)
         self.styleString = "QPushButton {  border-width: 2px; border-color: black; background-color: gray } QPushButton:checked { border-color: green; border-style: inset;}"
         letters = ["A", "B", "C", "D", "E", "F", "G", "H"]
@@ -2234,19 +2215,45 @@ class MoltenProtMainWindow(QMainWindow):
             for i in range(self.rowsCount):
                 self.btn2DArray[i][j].setEnabled(True)
 
+    def disableButtons(self):
+        for j in range(self.colsCount):
+            for i in range(self.rowsCount):
+                self.btn2DArray[i][j].setEnabled(False)
+
     def resetButtons(self):
         for j in range(self.colsCount):
             for i in range(self.rowsCount):
                 self.btn2DArray[i][j].setStyleSheet(self.styleString)
 
     def showOnlyValidButtons(self):
+        # shows a button only if it is found in the raw data
         for j in range(self.colsCount):
             for i in range(self.rowsCount):
                 objectName = self.btn2DArray[i][j].objectName()
-                if self.moltenProtFit.testWellID(objectName):
+                if self.moltenProtFit.testWellID(objectName, ignore_results=True):
                     self.btn2DArray[i][j].show()
                 else:
                     self.btn2DArray[i][j].hide()
+
+    def hideActions(self):
+        # hides actions that require a loaded dataset
+        self.mainWindow.actionSelectAll.setVisible(False)
+        self.mainWindow.actionDeselectAll.setVisible(False)
+        self.mainWindow.actionAnalysis.setVisible(False)
+        self.mainWindow.actionEdit_layout.setVisible(False)
+        self.mainWindow.actionSave_as_JSON.setVisible(False)
+        self.mainWindow.actionToolBar.setVisible(False)
+        self.mainWindow.actionToolBar.setEnabled(False)
+        self.mainWindow.actionShowHideProtocol.setVisible(False)
+
+    def resetGUI(self):
+        # Make the GUI look like it was just opened:
+        # analysis options, layout etc are hidden, all buttons are not clickable
+        # This method is used when a file could not be opened
+        self.hideActions()
+        self.resetButtons()
+        self.disableButtons()
+        self.populateDatasetComboBox([])# with an empty list as argument the combobox will be hidden
 
     def eventFilter(self, object, event):
         # print object
@@ -2620,7 +2627,6 @@ class MoltenProtMainWindow(QMainWindow):
         self.dockButtonsFrame.setLayout(hbox)
 
     ## \brief This method creates sortScoreComboBox and datasetComboBox, sets tooltips for them
-    ##   and then populates datasetComboBox by four strings - "330nm", "350nm",  "Ratio",  "Scattering".
     def createComboBoxesForActionToolBar(self):
         ## \brief  This member holds the sortScoreComboBox.
         self.sortScoreComboBox = QComboBox()
@@ -2630,10 +2636,11 @@ class MoltenProtMainWindow(QMainWindow):
         )
         ## \brief  This member holds the datasetComboBox.
         self.datasetComboBox = QComboBox()
-        self.datasetComboBox.setToolTip("Select input table")
+        self.datasetComboBox.setToolTip("Select a dataset for viewing")
         self.datasetComboBox.currentIndexChanged.connect(self.on_changeInputTable)
         self.heatmapMultipleListView = QListView(self.datasetComboBox)
         self.datasetComboBox.setView(self.heatmapMultipleListView)
+        self.datasetComboBoxAction = self.mainWindow.actionToolBar.addWidget(self.datasetComboBox)
 
     def createColorMapComboBox(self):
         self.colorMapComboBox = self.moltenProtToolBox.ui.colormapForPlotComboBox
@@ -2660,8 +2667,6 @@ class MoltenProtMainWindow(QMainWindow):
     ## \brief This method adds  self.sortScoreComboBox to self.mainWindow.actionToolBar if it was not already added. Then clears items in it, populates self.sortScoreComboBox by
     #   self.moltenProtFit.getResultsColumns() method and shows it. \sa core.MoltenProtFit.getResultsColumns() \sa sortScoreComboBox
     def populateAndShowSortScoreComboBox(self):
-        # print "populateAndShowSortScoreComboBox",  currentframe().f_lineno,  cfFilename
-        # print self.moltenProtFit.getResultsColumns()
         if self.sortScoreCombBoxAction == None:
             self.sortScoreCombBoxAction = self.mainWindow.actionToolBar.addWidget(
                 self.sortScoreComboBox
@@ -2671,15 +2676,6 @@ class MoltenProtMainWindow(QMainWindow):
         width = self.sortScoreComboBox.minimumSizeHint().width()
         self.sortScoreComboBox.setMinimumWidth(width)
         self.sortScoreCombBoxAction.setVisible(True)
-
-    def showHeatmapMultipleComboBoxAccording2FileType(self):
-        if self.showHeatmapMultipleComboBox:
-            if self.datasetComboBoxAction == None:
-                self.datasetComboBoxAction = self.mainWindow.actionToolBar.addWidget(
-                    self.datasetComboBox
-                )
-            else:
-                self.datasetComboBoxAction.setVisible(True)
 
     ## \brief This method creates MoltenProt GUI application main window.
     #   \details
@@ -2710,11 +2706,6 @@ class MoltenProtMainWindow(QMainWindow):
         tableWidget.setColumnCount(5)  # ATTENTION has to be set dynamically
         header = tableWidget.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        # tableWidget.setHorizontalHeaderLabels(columnLabels)
-        # tableWidget.setGeometry(5, 380, 700, 500)
-        # tableWidget.setGeometry(5, 490, 550, 400)
-        # tableWidget.setGeometry(5, 405, 550, 400)
-        # tableWidget.setGeometry(0, 0, 550, 400)
         tableWidget.setSortingEnabled(True)
         tableWidget.setAlternatingRowColors(True)
         tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -2759,7 +2750,6 @@ class MoltenProtMainWindow(QMainWindow):
 
     @pyqtSlot()
     def on_closeMoltenProtMainWindow(self):
-        # print("on_closeMoltenProtMainWindow")
         msg = QMessageBox(self)
         msg.setFont(self.font)
         msg.setWindowTitle("MoltenProt")

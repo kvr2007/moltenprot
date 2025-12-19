@@ -138,7 +138,8 @@ img.resize {
         <p align='left'>
             This report was generated with MoltenProt v. $VERSION on $TIMESTAMP.</br>
             <i>If you found this software helpful, please cite:</i>
-            <a href="https://www.cell.com/biophysj/fulltext/S0006-3495(18)32325-7">Kotov et al., Biophysical Journal. 116, 191a (2019)</a>
+            Kotov et al., Protein Science (2021)
+            <a href="https://dx.doi.org/10.1002/pro.3986">doi: 10.1002/pro.3986</a>
         </p>
     </div>
     
