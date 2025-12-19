@@ -1,0 +1,1292 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+	<title></title>
+	<meta name="generator" content="LibreOffice 6.1.5.2 (Linux)"/>
+	<meta name="author" content="Vadim Kotov"/>
+	<meta name="created" content="2020-03-28T14:58:48.910666897"/>
+	<meta name="changedby" content="Vadim Kotov"/>
+	<meta name="changed" content="2020-10-26T14:09:39.660766916"/>
+	<meta name="ZOTERO_PREF_1" content="&lt;data data-version=&quot;3&quot; zotero-version=&quot;5.0.87&quot;&gt;&lt;session id=&quot;Hi45ZglY&quot;/&gt;&lt;style id=&quot;http://www.zotero.org/styles/ieee&quot; locale=&quot;en-US&quot; hasBibliography=&quot;1&quot; bibliographyStyleHasBeenSet=&quot;1&quot;/&gt;&lt;prefs&gt;&lt;pref name=&quot;fieldType&quot; value=&quot;ReferenceMark&quot;/&gt;&lt;/prefs&gt;&lt;/data&gt;"/>
+	<style type="text/css">
+		@page { size: 21cm 29.7cm; margin: 2cm }
+		p { margin-bottom: 0.25cm; line-height: 115%; background: transparent }
+		p.western { font-family: "DejaVu Sans", sans-serif }
+		h1 { margin-bottom: 0.21cm; background: transparent; page-break-after: avoid }
+		h1.western { font-family: "Liberation Sans", sans-serif; font-size: 18pt; font-weight: bold }
+		h1.cjk { font-family: "Droid Sans Fallback"; font-size: 18pt; font-weight: bold }
+		h1.ctl { font-family: "FreeSans"; font-size: 18pt; font-weight: bold }
+		h2 { margin-top: 0.35cm; margin-bottom: 0.21cm; background: transparent; page-break-after: avoid }
+		h2.western { font-family: "Liberation Sans", sans-serif; font-size: 16pt; font-weight: bold }
+		h2.cjk { font-family: "Droid Sans Fallback"; font-size: 16pt; font-weight: bold }
+		h2.ctl { font-family: "FreeSans"; font-size: 16pt; font-weight: bold }
+		h3 { margin-top: 0.25cm; margin-bottom: 0.21cm; background: transparent; page-break-after: avoid }
+		h3.western { font-family: "Liberation Sans", sans-serif; font-size: 14pt; font-weight: bold }
+		h3.cjk { font-family: "Droid Sans Fallback"; font-size: 14pt; font-weight: bold }
+		h3.ctl { font-family: "FreeSans"; font-size: 14pt; font-weight: bold }
+		pre { font-family: "Liberation Mono", monospace; font-size: 10pt; background: transparent }
+		a:link { color: #000080; so-language: zxx; text-decoration: underline }
+		a:visited { color: #800000; so-language: zxx; text-decoration: underline }
+	</style>
+</head>
+<body lang="en-GB" link="#000080" vlink="#800000" dir="ltr"><p align="center" style="margin-top: 0.42cm; margin-bottom: 0.21cm; line-height: 100%; page-break-after: avoid">
+<font face="Liberation Sans, sans-serif"><font size="6" style="font-size: 28pt"><b>MoltenProt
+Documentation</b></font></font></p>
+<p align="center" style="margin-top: 0.11cm; margin-bottom: 0.21cm; line-height: 100%; page-break-after: avoid">
+<font face="Liberation Sans, sans-serif"><font size="5" style="font-size: 18pt">Vadim
+Kotov</font></font></p>
+<div id="Table of Contents1" dir="ltr">
+	<div id="Table of Contents1_Head" dir="ltr"><p style="margin-top: 0.42cm; margin-bottom: 0.21cm; line-height: 100%; page-break-after: avoid">
+		<font face="Liberation Sans, sans-serif"><font size="4" style="font-size: 16pt"><b>Table
+		of Contents</b></font></font></p>
+	</div>
+	<p style="margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc9898_2219652069">1.
+	 What is MoltenProt?	2</a></p>
+	<p style="margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc121323_2233964581">2.
+	 Step-by-step instructions	2</a></p>
+	<p style="margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc9900_2219652069">3.
+	 Graphical user interface	4</a></p>
+	<p style="margin-left: 0.5cm; margin-bottom: 0cm; line-height: 100%">
+	<a href="#__RefHeading___Toc102677_2233964581">3.1.  Main window	4</a></p>
+	<p style="margin-left: 0.5cm; margin-bottom: 0cm; line-height: 100%">
+	<a href="#__RefHeading___Toc9904_2219652069">3.2.  Toolbar	4</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc9906_2219652069">3.2.1.
+	 Readout combobox	4</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc9908_2219652069">3.2.2.
+	 Heatmap combobox	5</a></p>
+	<p style="margin-left: 0.5cm; margin-bottom: 0cm; line-height: 100%">
+	<a href="#__RefHeading___Toc9910_2219652069">3.3.  File Menu	5</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc31966_2233964581">3.3.1.
+	 File | New	5</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc31968_2233964581">3.3.2.
+	 File | Open	5</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc31989_2233964581">3.3.3.
+	 File | Export	5</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc31991_2233964581">3.3.4.
+	 File | Save as JSON	5</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc31993_2233964581">3.3.5.
+	 File | Quit	5</a></p>
+	<p style="margin-left: 0.5cm; margin-bottom: 0cm; line-height: 100%">
+	<a href="#__RefHeading___Toc9912_2219652069">3.4.  Actions |
+	Analysis	5</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc11131_2219652069">3.4.1.
+	 Basic settings	5</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc11133_2219652069">3.4.2.
+	 Pre-processing	6</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc11135_2219652069">3.4.3.
+	 Misc. options	6</a></p>
+	<p style="margin-left: 0.5cm; margin-bottom: 0cm; line-height: 100%">
+	<a href="#__RefHeading___Toc9914_2219652069">3.5.  Actions | Edit
+	layout	7</a></p>
+	<p style="margin-left: 0.5cm; margin-bottom: 0cm; line-height: 100%">
+	<a href="#__RefHeading___Toc9916_2219652069">3.6.  Actions | Select
+	/ Deselect	7</a></p>
+	<p style="margin-left: 0.5cm; margin-bottom: 0cm; line-height: 100%">
+	<a href="#__RefHeading___Toc9918_2219652069">3.7.  Actions |
+	Settings	7</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc31970_2233964581">3.7.1.
+	 Import	7</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc31972_2233964581">3.7.2.
+	 Export	8</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc31974_2233964581">3.7.3.
+	 Misc	8</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc31976_2233964581">3.7.4.
+	 Plots	8</a></p>
+	<p style="margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc31978_2233964581">4.
+	 Command-line interface	9</a></p>
+	<p style="margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc9924_2219652069">5.
+	 Input/Output	10</a></p>
+	<p style="margin-left: 0.5cm; margin-bottom: 0cm; line-height: 100%">
+	<a href="#__RefHeading___Toc9926_2219652069">5.1.  Supported
+	formats	10</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc121273_2233964581">5.1.1.
+	 CSV	10</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc121275_2233964581">5.1.2.
+	 Layout CSV	10</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc121277_2233964581">5.1.3.
+	 XLSX	10</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc121279_2233964581">5.1.4.
+	 JSON	11</a></p>
+	<p style="margin-left: 0.5cm; margin-bottom: 0cm; line-height: 100%">
+	<a href="#__RefHeading___Toc9928_2219652069">5.2.  Output files	11</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc121281_2233964581">5.2.1.
+	 Curves	11</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc121283_2233964581">5.2.2.
+	 Fit parameters	11</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc121285_2233964581">5.2.3.
+	 Sample information	12</a></p>
+	<p style="margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc9932_2219652069">6.
+	 Models	13</a></p>
+	<p style="margin-left: 0.5cm; margin-bottom: 0cm; line-height: 100%">
+	<a href="#__RefHeading___Toc19557_1787345987">6.1.  Overview	13</a></p>
+	<p style="margin-left: 0.5cm; margin-bottom: 0cm; line-height: 100%">
+	<a href="#__RefHeading___Toc19559_1787345987">6.2.  Extensive and
+	intensive readouts	13</a></p>
+	<p style="margin-left: 0.5cm; margin-bottom: 0cm; line-height: 100%">
+	<a href="#__RefHeading___Toc19561_1787345987">6.3.  Equilibrium
+	models	13</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc9934_2219652069">6.3.1.
+	 santoro1988	13</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc121325_2233964581">6.3.2.
+	 santoro1988i	14</a></p>
+	<p style="margin-left: 0.5cm; margin-bottom: 0cm; line-height: 100%">
+	<a href="#__RefHeading___Toc19563_1787345987">6.4.  Empirical
+	models	14</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc121327_2233964581">6.4.1.
+	 santoro1988d	15</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc121329_2233964581">6.4.2.
+	 santoro1988di	15</a></p>
+	<p style="margin-left: 0.5cm; margin-bottom: 0cm; line-height: 100%">
+	<a href="#__RefHeading___Toc19565_1787345987">6.5.  Kinetic
+	models	15</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc121331_2233964581">6.5.1.
+	 irrev	15</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc121333_2233964581">6.5.2.
+	 lumry_eyring	16</a></p>
+	<p style="margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc11137_2219652069">7.
+	 Credits &amp; copyright	17</a></p>
+	<p style="margin-left: 0.5cm; margin-bottom: 0cm; line-height: 100%">
+	<a href="#__RefHeading___Toc11139_2219652069">7.1.  MoltenProt	17</a></p>
+	<p style="margin-left: 0.5cm; margin-bottom: 0cm; line-height: 100%">
+	<a href="#__RefHeading___Toc11141_2219652069">7.2.  Dependencies	17</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc53894_2233964581">7.2.1.
+	 pandas	17</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc53896_2233964581">7.2.2.
+	 numpy	17</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc53898_2233964581">7.2.3.
+	 scipy	18</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc53900_2233964581">7.2.4.
+	 matplotlib	18</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc53902_2233964581">7.2.5.
+	 PyQt5	18</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc53904_2233964581">7.2.6.
+	 openpyxl	19</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc53906_2233964581">7.2.7.
+	 xlrd	19</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc53908_2233964581">7.2.8.
+	 joblib	21</a></p>
+	<p style="margin-left: 1cm; margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc11143_2219652069">7.2.9.
+	 Oxygen icons	21</a></p>
+	<p style="margin-bottom: 0cm; line-height: 100%"><a href="#__RefHeading___Toc9936_2219652069">8.
+	 References	22</a></p>
+</div>
+<p class="western"><br/>
+<br/>
+
+</p>
+<h1 class="western"><a name="__RefHeading___Toc9898_2219652069"></a>1. What
+is MoltenProt?</h1>
+<p class="western">MoltenProt is a program to fit sigmoidal curves
+obtained with label-free protein unfolding assays, such as NanoDSF or
+circular dichroism measurements. In addition to widely-used melting
+temperature (Tm) MoltenProt uses other curve characteristics to rank
+the results in terms of their (thermo)stability. Furthermore,
+MoltenProt offers a panel of protein unfolding models, including
+equilibrium unfolding, irreversible unfolding and the Lumry-Eyring
+model. See <a href="#5.Models|outline">Models</a> for more
+information.</p>
+<p class="western">MoltenProt provides a <a href="#2.Graphical user interface|outline">GUI</a>
+for exploratory data analysis and a <a href="#3.Command-line interface|outline">CLI</a>
+for batch-processing.</p>
+<h1 class="western"><a name="__RefHeading___Toc121323_2233964581"></a>
+2. Step-by-step instructions</h1>
+<ol>
+	<li><p class="western">Obtain a dataset, where protein unfolding is
+	monitored with a label-free technique as a function of
+	temperature.<br/>
+<b>NOTE</b>: Two demo datasets (in CSV and XLSX
+	format) are distributed together with MoltenProt.</p>
+	<li><p class="western">If the input data is in XLSX format, use a
+	spreadsheet editor to annotate the samples (sheet &quot;Overview&quot;).</p>
+	<li><p class="western">Start the MoltenProt GUI and load the
+	dataset. Hover on individual samples with mouse to view the raw
+	curves. Click on wells to display several curves. If multiple
+	datasets are present in the file, a combobox will appear in the
+	toolbar. Inspect the curves. If needed, set bad curve annotation to
+	&quot;Ignore&quot; using Layout editor.</p>
+	<li><p class="western">Open the analysis menu and select the model
+	for each dataset. The default settings usually provide the best
+	performance of the fit, however, the model may not reflect the real
+	nature of protein unfolding.</p>
+	<ol>
+		<li><p class="western">If curves contain spikes, they can be
+		removed by trimming some values in the beginning or end of the
+		curve. In more difficult cases, a median filter can be applied to
+		smooth out the spikes.</p>
+		<li><p class="western">If curves are too noisy, the signal strength
+		may be improved by averaging datapoints to a larger degree step
+		(shrinking).</p>
+	</ol>
+	<li><p class="western">Once the analysis is done, the sample
+	stability will be color-coded on a heatmap. By default the
+	model-supplied ranking parameter will be used for the heatmap. Other
+	useful parameters for heatmap coloring will be available in a
+	combobox. Click on the samples of interest to compare their fit
+	curves side-by-side and show the fit parameters in a table.</p>
+	<li><p class="western">Inspect highest/lowest ranked curves. How
+	noisy is the measurement Does the fit result reflect the curve
+	features?</p>
+	<ol>
+		<li><p class="western">If a particularly noisy curve distorts the
+		heatmap, it can be removed from analysis by annotating the sample
+		as &quot;Ignore&quot; in Layout editor and re-running analysis.</p>
+		<li><p class="western">If needed, perform fine-tuning of curve
+		fitting parameters.</p>
+		<li><p class="western">To store all analysis and visualization
+		settings save a MoltenProt session in JSON format. The session file
+		can be loaded later for re-analysis or data exporting.</p>
+	</ol>
+	<li><p class="western">Export the data using the format that is most
+	appropriate for downstream analysis.</p>
+</ol>
+<h1 class="western"><a name="__RefHeading___Toc9900_2219652069"></a><a name="2.Graphical user interface|outline"></a>
+3. Graphical user interface</h1>
+<h2 class="western"><a name="__RefHeading___Toc102677_2233964581"></a>
+3.1. Main window</h2>
+<p class="western"> 
+<img src="MainWindow.png" name="Image3" align="bottom" width="607" height="312" border="0"/>
+
+</p>
+<ol>
+	<li><p class="western"><b>Heatmap panel:</b> samples are color-coded
+	with the selected curve characteristics. Hover-on with a mouse to
+	visualize the data in the Plot window. Click several samples to
+	visualize them side-by-side on the Plot window; their fit parameters
+	will be shown in the Result table.</p>
+	<li><p class="western"><b>Result table</b>: displays characteristics
+	of selected curves. The set of characteristics to be displayed
+	depends on the type of analysis performed.</p>
+	<li><p class="western"><b>Plot window</b>: visualizes data requested
+	by the user. A variety of plots can be displayed; use <a href="#2.7.Actions |  Settings|outline">Settings</a>
+	for fine tuning.</p>
+	<li><p class="western"><b>Protocol window</b>: displays the log of
+	the data analysis including informational messages and warnings.
+	Errors in analysis produce a pop-up window.</p>
+	<li><p class="western"><b>Toolbar</b> and <b>menus</b> provide
+	access to the functions of MoltenProt; <b>window decorator</b><span style="font-weight: normal">
+	</span>is managed by the operating system.</p>
+</ol>
+<h2 class="western"><a name="__RefHeading___Toc9904_2219652069"></a>3.2. Toolbar</h2>
+<h3 class="western"><a name="__RefHeading___Toc9906_2219652069"></a>3.2.1. Readout
+combobox</h3>
+<p class="western">Switches between the readouts present in the input
+file, e.g. F330, F350 and Ratio. If the input file contains a single
+readout (e.g. plain CSV), then Readout combobox will not be shown.</p>
+<h3 class="western"><a name="__RefHeading___Toc9908_2219652069"></a>3.2.2. Heatmap
+combobox</h3>
+<p class="western">Selects a curve characteristic to color the
+heatmap in the GUI. Available options depend on the chosen analysis
+<a href="#6.Models|outline">model</a>.</p>
+<h3 class="western">3.2.3. Font settings</h3>
+<p class="western">Loads the menu to adjust font size, type, etc in
+MoltenProt. Useful for scaling the program window on high-resolution
+displays.</p>
+<h2 class="western"><a name="__RefHeading___Toc9910_2219652069"></a>3.3. File
+Menu</h2>
+<h3 class="western"><a name="__RefHeading___Toc31966_2233964581"></a>3.3.1. File
+|  New</h3>
+<p class="western">Start a new MoltenProt session.</p>
+<h3 class="western"><a name="__RefHeading___Toc31968_2233964581"></a>3.3.2. File
+|  Open</h3>
+<p class="western">Open one of the <a href="#5.1.Supported formats|outline">supported
+file formats</a>: comma-separated values (CSV), NanoDSF processed
+data (XLSX) or MoltenProt session (JSON).</p>
+<h3 class="western"><a name="__RefHeading___Toc31989_2233964581"></a>3.3.3. File
+|  Export</h3>
+<p class="western">Export results with selected settings to a
+directory.</p>
+<h3 class="western"><a name="__RefHeading___Toc31991_2233964581"></a>3.3.4. File
+|  Save as JSON</h3>
+<p class="western">Save the current MoltenProt session.</p>
+<h3 class="western"><a name="__RefHeading___Toc31993_2233964581"></a>3.3.5. File
+|  Quit</h3>
+<p class="western">Terminate the program.</p>
+<h2 class="western"><a name="__RefHeading___Toc9912_2219652069"></a><a name="3.4.Actions |  Analysis|outline"></a>
+3.4. Actions |  Analysis</h2>
+<p class="western">Set analysis settings and process data. OK button
+will run the analysis, Cancel button will close the window, Reset to
+defaults button will supply default values to all analysis
+parameters.</p>
+<h3 class="western"><a name="__RefHeading___Toc11131_2219652069"></a>3.4.1. Basic
+settings</h3>
+<p class="western">This tab displays a table with available datasets
+(1 in case of CSV, up to 5 in case of XLSX input file type) and a
+combobox with possible models of analysis:</p>
+<ol>
+	<li><p class="western"><b>santoro1988</b>: fast and robust fitting
+	based on equilibrium two-state unfolding model;</p>
+	<li><p class="western"><b>santoro1988i</b>: same as 1, but with an
+	additional unfolding intermediate (three-state model);</p>
+	<li><p class="western"><b>santoro1988d</b>: fast, but less robust
+	fitting, which works descriptively, i.e. not assuming any unfolding
+	mechanism; the idea is to provide the best quantitative description
+	of the experimental curve;</p>
+	<li><p class="western"><b>santoro1988di</b>: same as 3, but suitable
+	for fitting unfolding curves with one intermediate (two peaks
+	observed in the derivative plot);</p>
+	<li><p class="western"><b>irrev</b>: irreversible two-state
+	unfolding; protein unfolding is described kinetically, rather than
+	using thermodynamics. This is a very common case, because most
+	proteins do not reach equilibrium and unfold irreversibly.
+	Computation requires numeric integration, so data processing is
+	slow;</p>
+	<li><p class="western"><b>lumry_eyring</b>: Lumry-Eyring model for
+	protein unfolding coupled with aggregation; can be used only if
+	Scattering is available in the input data. First, the kinetics of
+	aggregation are estimated using irrev model, and then unfolding and
+	refolding kinetics are estimated. Computation requires numeric
+	integration, so data processing is slow;</p>
+	<li><p class="western"><b>skip</b>: the dataset will not be
+	processed at all. The raw data will be preserved and can be
+	re-analysed later on.</p>
+</ol>
+<p class="western">For more details on the models implemented in
+MoltenProt see <a href="#6.Models|outline">Models</a>. In most cases
+the choice of the model is the only decision required from the user.</p>
+<h3 class="western"><a name="__RefHeading___Toc11133_2219652069"></a>3.4.2. Pre-processing</h3>
+<ul>
+	<li><p class="western"><b>Median filtering</b><span style="font-weight: normal">:
+	remove spikes from the data by applying a median filter. The window
+	size, i.e. the number of datapoints used to compute the median, is
+	specified in temperature degrees. Median filter removes information
+	from the data, and curve fitting is usually robust and not affected
+	by spikes, so this option is rarely needed.</span></p>
+	<li><p class="western"><b>Shrink data</b><span style="font-weight: normal">:
+	shrink data to a specified degree step. This step removes
+	information from the data and decreases certainty of the fit, but
+	may help expose global trends in the data. Also, shrunk data are
+	processed faster.</span></p>
+	<li><p class="western"><b>Remove from curve start/end</b><span style="font-weight: normal">:
+	drop some datapoints in the beginning of the end of the curve. This
+	option may be helpful if the signal </span><span style="font-weight: normal">spikes
+	</span><span style="font-weight: normal">at the start or end of the
+	experiment.</span></p>
+</ul>
+<h3 class="western"><a name="__RefHeading___Toc11135_2219652069"></a>3.4.3. Misc.
+options</h3>
+<ul>
+	<li><p class="western"><b>Savitzky-Golay window size</b><span style="font-weight: normal">:
+	window size for Savitzky-Golay filter to calculate the smoothened
+	first derivative. The window size is specified in temperature
+	degrees and converted to an odd number of datapoints automatically.
+	The smoothened derivative is used in data </span><span style="font-weight: normal">visualization</span><span style="font-weight: normal">
+	and also provides the initial value for Tm.</span></p>
+	<li><p class="western"><b>Data length for baseline estimation</b><span style="font-weight: normal">:
+	how many degrees in the beginning and the end of the curve are pure
+	baselines, i.e. temperature dependence of the signal with 0% and
+	100% protein molecules unfolded. The stretches of the data will be
+	used to generate initial values for baseline fit parameters.</span></p>
+	<li><p class="western"><b>Baseline bounds (n*stdev)</b><span style="font-weight: normal">:
+	</span><span style="font-weight: normal">after initial baseline
+	estimation (see previous option), MoltenProt uses the standard
+	deviations for the slope and the intercept as the parameter bounds
+	for pre- and post-transition baselines in the fitting of the full
+	unfolding curve. </span><span style="font-weight: normal">In
+	problematic cases this prevents the baselines from moving too far
+	away from the experimental data.</span></p>
+	<li><p class="western"><b>Heat capacity change (</b><font face="DejaVu Sans, sans-serif"><b>Δ</b></font><b>C</b><b>p</b><b>)</b><span style="font-weight: normal">:
+	provide the value in J/mol/K, which will be used to extrapolate </span><font face="DejaVu Sans, sans-serif"><span style="font-weight: normal">Δ</span></font><span style="font-weight: normal">G</span><span style="font-weight: normal">u</span><span style="font-weight: normal">
+	from the unfolding region (around T</span><span style="font-weight: normal">m</span><span style="font-weight: normal">)
+	to </span><span style="font-weight: normal">the standard temperature
+	of</span><span style="font-weight: normal"> 298.15&nbsp;K. If </span><font face="DejaVu Sans, sans-serif"><span style="font-weight: normal">Δ</span></font><span style="font-weight: normal">C</span><span style="font-weight: normal">p</span><span style="font-weight: normal">
+	is zero, then the extrapolation will be linear. For soluble proteins
+	of 30 kDa and below </span><font face="DejaVu Sans, sans-serif"><span style="font-weight: normal">Δ</span></font><span style="font-weight: normal">C</span><span style="font-weight: normal">p</span><span style="font-weight: normal">
+	can be estimated by multiplying the number of residues by 58 [1].
+	This value is only relevant for models based on equilibrium
+	unfolding.</span></p>
+</ul>
+<h2 class="western"><a name="__RefHeading___Toc9914_2219652069"></a><a name="3.5.Actions |  Edit layout|outline"></a><a name="3.5.Actions |  Edit layout|outline"></a>
+3.5. Actions |  Edit layout</h2>
+<p class="western">Create or edit annotations of individual samples.
+This information will be shown in the GUI and, where applicable,
+written to the output files. Annotations can be added manually via
+the opened layout dialog or loaded from a CSV file. For XLSX files
+the recommended way to supply annotations is to edit the &quot;Overvew&quot;
+sheet in the original XLSX file with a spreadsheet editor. See
+<a href="#5.1.Supported formats|outline">Supported Formats</a> for
+more info. Context menu for the layout dialog (right mouse button)
+provides additional options:</p>
+<ul>
+	<li><p class="western"><b>Blank</b><span style="font-weight: normal">:
+	mark selected samples as blank buffer. During the analysis these
+	curves will be averaged and subtracted from all other curves. This
+	can be used to remove signal of the buffer. Note that the proper
+	blank subtraction for F330/F350 Ratio data is not implemented.</span></p>
+	<li><p class="western"><b>Ignore</b><span style="font-weight: normal">:
+	skip selected samples in the analysis.</span></p>
+	<li><p class="western"><b>Clear selected cells</b><span style="font-weight: normal">:
+	clear any annotations in the selected cells.</span></p>
+</ul>
+<h2 class="western"><a name="__RefHeading___Toc9916_2219652069"></a>3.6. Actions
+|  Select /  Deselect</h2>
+<p class="western">Display/hide all curves in the dataset.</p>
+<h2 class="western"><a name="__RefHeading___Toc9918_2219652069"></a><a name="2.7.Actions |  Settings|outline"></a>
+3.7. Actions |  Settings 
+</h2>
+<h3 class="western"><a name="__RefHeading___Toc31970_2233964581"></a>3.7.1. Import</h3>
+<ul>
+	<li><p class="western"><b>CSV</b><span style="font-weight: normal">:
+	parameters for parsing unfolding data in CSV format:</span></p>
+	<ul>
+		<li><p class="western" style="font-weight: normal">Separator,
+		Decimal separator: characters that separate data entries and
+		indicate the decimal digit</p>
+		<li><p class="western" style="font-weight: normal">Denaturation:
+		indicate if the temperature scale in the input file is in Kelvins
+		or Celsius or that the data is chemical denaturation.</p>
+		<li><p class="western" style="font-weight: normal">Scan rate:
+		heating rate in degrees/min. Scan rate is relevant only for
+		non-equilibrium models.</p>
+	</ul>
+	<li><p class="western"><b>XLSX</b><span style="font-weight: normal">:
+	parameters for parsing XLSX data (NanoDSF):</span></p>
+	<ul>
+		<li><p class="western" style="font-weight: normal">Refolding data:
+		Indicate if the refolding ramp was used in the experiment; this is
+		needed for correct parsing of input files, however, the refolding
+		data itself is not used in downstream analysis.</p>
+	</ul>
+</ul>
+<h3 class="western"><a name="__RefHeading___Toc31972_2233964581"></a><a name="3.7.2.Export|outline"></a>
+3.7.2. Export</h3>
+<ul>
+	<li><p class="western"><b>Data table format</b><span style="font-weight: normal">:</span></p>
+	<ul>
+		<li><p class="western"><span style="font-weight: normal">&quot;</span><span style="font-weight: normal">*.csv</span><span style="font-weight: normal">&quot;</span><span style="font-weight: normal">:
+		output comma-separated files with UTF encoding and each table will
+		be an individual file.</span></p>
+		<li><p class="western"><span style="font-weight: normal">&quot;</span><span style="font-weight: normal">*.xlsx</span><span style="font-weight: normal">&quot;</span><span style="font-weight: normal">:
+		export a single file with multiple sheets.</span></p>
+	</ul>
+	<li><p class="western"><b>Figures/heatmaps</b><span style="font-weight: normal">:
+	include images of individual plots or heatmaps in the output. </span><span style="font-weight: normal">The
+	colormap for the heatmap </span><span style="font-weight: normal">will
+	be same as in the GUI.</span></p>
+	<li><p class="western"><b>Report type</b><span style="font-weight: normal">:</span></p>
+	<ul>
+		<li><p class="western" style="font-weight: normal">&quot;None&quot;:
+		no reports are generated.</p>
+		<li><p class="western" style="font-weight: normal">&quot;Compact
+		XLSX&quot;: produce an XLSX file containing a result table for all
+		readouts, but no curves or images will be generated.</p>
+		<li><p class="western"><span style="font-weight: normal">&quot;Interactive
+		HTML&quot;: the report will contain a full package of data
+		including XLSX files with raw, fit, </span><span style="font-weight: normal">baseline-corrected
+		</span><span style="font-weight: normal">curves, analysis results
+		and standard deviations. The files will be linked in a single HTML
+		file, which also allows viewing plots of individual samples. The
+		main advantage of HTML reports is that they do not require
+		installation of MoltenProt and can be viewed in any modern
+		web-browser.</span></p>
+	</ul>
+</ul>
+<p class="western">For more details see <a href="#5.2.Output files|outline">Output
+files</a>.</p>
+<h3 class="western"><a name="__RefHeading___Toc31974_2233964581"></a>3.7.3. Misc</h3>
+<ul>
+	<li><p class="western"><b>Parallel processes</b><span style="font-weight: normal">:
+	MoltenProt will can some steps with the specified number of
+	subprocesses. This can speed up the workflow, but will also consume
+	more computer resources.</span></p>
+	<li><p class="western"><b>Colormap for heatmap</b><span style="font-weight: normal">:</span><span style="font-weight: normal">
+	Choose one of the matplotlib colormaps for the main heatmap:<br/>
+ </span><b>
+	<img src="colormaps.png" name="Image12" align="bottom" width="325" height="72" border="0"/>
+</b><span style="font-weight: normal">
+	<br/>
+Colormaps with &quot;_r&quot; will have inverse color
+	direction.</span></p>
+</ul>
+<h3 class="western"><a name="__RefHeading___Toc31976_2233964581"></a>3.7.4. Plots</h3>
+<ul>
+	<li><p class="western"><b>Display curve</b><span style="font-weight: normal">:</span></p>
+	<ul>
+		<li><p class="western" style="font-weight: normal">&quot;Experimental
+		signal&quot;: show raw experimental data.</p>
+		<li><p class="western" style="font-weight: normal">&quot;Baseline-corrected&quot;:
+		pre- and post-transition baselines are subtracted from the data to
+		get a sigmoidal curve ranging from 0 to 1. This viewing mode
+		simplifies comparison between samples.</p>
+	</ul>
+	<li><p class="western"><b>Display as</b><span style="font-weight: normal">:</span></p>
+	<ul>
+		<li><p class="western" style="font-weight: normal">&quot;Datapoints
+		+ Fit&quot;: show both experimental and the fit result.</p>
+		<li><p class="western" style="font-weight: normal">&quot;Datapoints&quot;:
+		only experimental data.</p>
+		<li><p class="western" style="font-weight: normal">&quot;Fit&quot;:
+		only fit data.</p>
+	</ul>
+	<li><p class="western"><b>Baselines</b>: show pre- and
+	post-transition baselines obtained in the fitting as dashed lines.
+	If one of the baselines is not visible or is too far from the data,
+	then the fitting may have gone wrong.</p>
+	<li><p class="western"><b>Vertical lines</b><span style="font-weight: normal">:
+	</span><span style="font-weight: normal">show </span><span style="font-weight: normal">characteristic
+	temperatures (e.g. T</span><span style="font-weight: normal">m</span><span style="font-weight: normal">
+	or </span><span style="font-weight: normal">T_onset</span><span style="font-weight: normal">)
+	as vertical lines </span><span style="font-weight: normal">on the
+	plot</span><span style="font-weight: normal">.</span></p>
+	<li><p class="western"><b>Show every</b><span style="font-weight: normal">:
+	Show only n-th experimental datapoint. This is useful to unclutter
+	dense experimental curves.</span></p>
+	<li><p class="western"><b>Derivative plot</b><span style="font-weight: normal">:
+	Create an additional plot showing the smoothened first derivative of
+	experimental data.</span></p>
+	<li><p class="western"><b>Legend</b><span style="font-weight: normal">:
+	Show legend for the plot.</span></p>
+</ul>
+<h1 class="western"><a name="__RefHeading___Toc31978_2233964581"></a><a name="3.Command-line interface|outline"></a>
+4. Command-line interface</h1>
+<p class="western">Upon installation, MoltenProt is accessible as a
+Python module:</p>
+<pre>
+python -m moltenprot --help
+</pre><p class="western">
+All options implemented in the GUI are also available via the CLI.
+The only difference is that per-readout model settings are not
+available. The main usage for CLI is to perform processing of
+multiple datasets with the same parameters:</p>
+<pre>
+python -m moltenprot -i dataset1.xlsx dataset2.xlsx -o all_datasets -rj 2 --exclude_readout 330nm --model_sct santoro1988d
+</pre><p class="western">
+This command will process files dataset1.xlsx and dataset2.xlsx,
+write the output (HTML report) to folder all_datasets. The readout
+called &quot;330nm&quot; will be excluded and for scattering data
+model santoro1988d will be applied. All other datasets will be
+processed with default model santoro1988. The program will run in two
+parallel processes.</p>
+<h1 class="western"><a name="__RefHeading___Toc9924_2219652069"></a>5. Input/Output</h1>
+<h2 class="western"><a name="__RefHeading___Toc9926_2219652069"></a><a name="5.1.Supported formats|outline"></a><a name="5.1.Supported formats|outline"></a>
+5.1. Supported formats</h2>
+<h3 class="western"><a name="__RefHeading___Toc121273_2233964581"></a>
+5.1.1. CSV</h3>
+<p class="western">Comma-separated value (CSV) file for MoltenProt
+must follow several rules:</p>
+<ul>
+	<li><p class="western">First row contains column names.</p>
+	<li><p class="western">One column is called &quot;Temperature&quot;
+	and contains the X-axis values.</p>
+	<li><p class="western">All other columns have an alphanumeric index
+	similar to a 96-well plate (from A1 to H12).</p>
+</ul>
+<pre>
+Temperature,A1,A2, ... ,H12
+20,1300,1500,...,1600
+21,1400,1600,...,1700
+...
+95,2000,2100,...,2200
+</pre><p class="western">
+Under the hood MoltenProt uses pandas.read_csv to parse CSV files, so
+any separator supported by this module can be used in MoltenProt.</p>
+<h3 class="western"><a name="__RefHeading___Toc121275_2233964581"></a>
+5.1.2. Layout CSV</h3>
+<p class="western">These files provide a description of individual
+samples and can be added to MoltenProt session with <a href="#3.5.Actions |  Edit layout|outline">Layout
+editor</a>. Files should follow several requirements:</p>
+<ul>
+	<li><p class="western">First row contains column names.</p>
+	<li><p class="western">One column is called &quot;ID&quot; and
+	contains an alphanumeric index similar to a 96-well plate (from A1
+	to H12).</p>
+	<li><p class="western">One column is called &quot;Condition&quot;
+	and contains the annotations.</p>
+	<li><p class="western">The file can be only comma-separated, any
+	other separators are not allowed; it is also recommended that all
+	text is quoted.</p>
+	<li><p class="western">An optional column can be called &quot;dCp&quot;
+	and can contain per-sample values of heat capacity change.</p>
+</ul>
+<pre>
+&quot;ID&quot;,&quot;Condition&quot;
+&quot;A1&quot;,&quot;Ultrapure water&quot;
+&quot;A2&quot;,&quot;Original buffer&quot;
+...
+&quot;H12&quot;,&quot;Blank&quot;
+</pre><h3 class="western">
+<a name="__RefHeading___Toc121277_2233964581"></a>5.1.3. XLSX</h3>
+<p class="western">XLSX files with &quot;processed&quot; data
+generated by PR.ThermControl (NanoTemper GmbH, tested with v.2.1.2)
+can be opened directly in MoltenProt. The annotations provided in the
+&quot;Overview&quot; sheet are imported as well. While MoltenProt
+offers basic capabilities for editing annotations, it is recommended
+to set all annotations in the &quot;Overview&quot; sheet using a
+full-featured spreadsheet editor.</p>
+<p class="western"><b>NOTE:</b><span style="font-weight: normal"> An
+additional readout, F350-F330 (deltaF), is computed automatically.
+</span><span style="font-weight: normal">For more info see</span><span style="font-weight: normal">
+<a href="#6.Models|outline">Models</a> section.</span></p>
+<h3 class="western"><a name="__RefHeading___Toc121279_2233964581"></a>
+5.1.4. JSON</h3>
+<p class="western">MoltenProt uses JavaScript Object Notation (JSON)
+format to store sessions, i.e. the current state of the program.
+Sessions contain raw and processed data as well as annotations,
+analysis options used, timestamps etc, thus providing an easy way to
+save results for later viewing.</p>
+<h2 class="western"><a name="__RefHeading___Toc9928_2219652069"></a><a name="5.2.Output files|outline"></a>
+5.2. Output files</h2>
+<p class="western">File export settings can be adjusted in
+<a href="#3.7.2.Export|outline">Settings|Export</a>. MoltenProt
+usually writes out multiple files, so it is recommended to export
+results to a dedicated directory. The exception is saving of JSON
+sessions, where everything is written into a single file.</p>
+<h3 class="western"><a name="__RefHeading___Toc121281_2233964581"></a>
+5.2.1. Curves</h3>
+<p class="western">For each readout present in the input file (e.g.
+F330, F350, Ratio) CSV export will produce a separate file for each
+curve type (see below). XLSX export will create a single XLSX file
+for each readout present in the input file. The following curve types
+are available:</p>
+<ul>
+	<li><p class="western"><b>Raw data</b><span style="font-weight: normal">
+	(not exported to CSV): original data read from the input file.</span></p>
+	<li><p class="western"><b>Preprocessed data</b><span style="font-weight: normal">
+	(CSV files with suffix &quot;_preproc_curves&quot;): raw data that
+	underwent the pre-processing procedure, such as median filtering or
+	shrinking (see </span><a href="#3.4.Actions |  Analysis|outline">Analysis</a><span style="font-weight: normal">).
+	The curves will have blanks subtracted (if any specified in the
+	layout) and samples marked as &quot;Ignore&quot; in the layout will
+	be removed.</span></p>
+	<li><p class="western"><b>Fit curves</b><span style="font-weight: normal">
+	(CSV files with suffix &quot;_fit&quot;): these curves are computed
+	over the whole X-axis range of the input data using the determined
+	fit parameters and are used to generate plots in the GUI and PNG
+	format. This table is provided for convenience in case plotting of
+	fit data outside MoltenProt is planned.</span></p>
+	<li><p class="western"><b>Baseline-corrected</b><span style="font-weight: normal">
+	(CSV files with suffix &quot;_</span><span style="font-weight: normal">raw_corr</span><span style="font-weight: normal">&quot;):
+	raw data corrected for the pre- and post-transition baselines
+	</span><span style="font-weight: normal">determined by the fit</span><span style="font-weight: normal">.
+	</span><span style="font-weight: normal">These curves </span><span style="font-weight: normal">are
+	useful for visualization and comparison between samples, because all
+	Y-axis values are </span><span style="font-weight: normal">always</span><span style="font-weight: normal">
+	in range from 0 (no protein unfolded) to 1 (all protein unfolded).</span></p>
+</ul>
+<h3 class="western"><a name="__RefHeading___Toc121283_2233964581"></a>
+5.2.2. Fit parameters</h3>
+<p class="western">The results of the fit are presented in two
+separate XLSX sheets/CSV files:</p>
+<ul>
+	<li><p class="western"><b>F</b><b>it parameters</b> (CSV files with
+	suffix &quot;_results&quot;): a table with all curve characteristics
+	computed by MoltenProt. Parameters with suffix &quot;_init&quot; are
+	the initial parameters for the non-linear curve-fitting procedure;
+	suffix &quot;_fit&quot; marks the parameters obtained with curve
+	fitting.</p>
+	<li><p class="western"><b>Standard deviations</b> (CSV files with
+	suffix &quot;_results_stdev&quot;): non-linear curve-fitting
+	procedure also yields a covariance matrix for obtained fit
+	parameters. This information can be used to estimate the uncertainty
+	of the fit and thus conclude if the current fitting result is
+	reliable. For instance, well fit curves have Tm standard deviation
+	of 0.5&nbsp;K or below.</p>
+</ul>
+<p class="western">Initial values of the fit parameters have suffix
+&quot;_init&quot;, fit results have suffix &quot;_fit&quot;. Some
+parameters are shared by all built-in models of MoltenProt:</p>
+<ul>
+	<li><p class="western"><b>kN, bN</b>: slope and intercept of the
+	pre-transition baseline, i.e. temperature dependence of native state
+	(N) fluorescence.</p>
+	<li><p class="western"><b>kU, bU</b>: slope and intercept of the
+	post-transition baseline, i.e. temperature dependence of unfolded
+	state (U) fluorescence.</p>
+	<li><p class="western"><b>S</b>: standard error of the estimate (in
+	units of Y-axis). This metric assesses how well the experimental
+	data is described by the fit: for 99% of datapoints the difference
+	between the observed and fit values will be below 3*S. S is very
+	sensitive for large outliers, such as spikes in the signal, so it
+	should not be used as a single value to assess the curve quality</p>
+	<li><p class="western"><b>BS_factor</b>: baseline separation factor
+	(unit-less). BS-factor is a quantitative measure to assess how far
+	is the pre-transition baseline from the post-transition baseline at
+	Tm taking into account the noise in the signal (estimated via S).
+	Curves with BS-factor above 0.8 are exceptionally good, while curves
+	with BS-factor in range 0-0.5 should be treated with caution.
+	Negative BS-factor means that the curve is not suitable for
+	interpretation. Since BS-factor is relative and unit-less, it is
+	particularly helpful in deciding which readout to use for downstream
+	analysis (e.g. F330 vs Ratio in NanoDSF data): the readout with
+	higher average BS-factor is more preferable.</p>
+</ul>
+<p class="western">Model-specific parameters are described in <a href="#6.Models|outline">Models</a>
+section.</p>
+<h3 class="western"><a name="__RefHeading___Toc121285_2233964581"></a>
+5.2.3. Sample information</h3>
+<p class="western">The following sample information is included in
+the result table:</p>
+<ul>
+	<li><p class="western"><b>ID</b>: internal sample number assigned by
+	MoltenProt. Up to 96 samples can be processed at once (A1 to H12).</p>
+	<li><p class="western"><b>Capillary</b><span style="font-weight: normal">
+	</span><span style="font-weight: normal">(</span>only NanoDSF data):
+	capillary position in the device.</p>
+	<li><p class="western"><b>Condition</b>: annotation describing the
+	contents of the sample. For NanoDSF data the value is read from
+	sheet &quot;Overview&quot;. Annotations can be changed via <a href="#3.5.Actions |  Edit layout|outline">Layout
+	editor</a>.</p>
+</ul>
+<h1 class="western"><a name="__RefHeading___Toc9932_2219652069"></a><a name="6.Models|outline"></a><a name="6.Models|outline"></a><a name="6.Models|outline"></a><a name="6.Models|outline"></a><a name="5.Models|outline"></a>
+6. Models</h1>
+<h2 class="western"><a name="__RefHeading___Toc19557_1787345987"></a>6.1. Overview</h2>
+<p class="western">MoltenProt implements a variety of protein
+unfolding models, which should cover most common use-cases. All
+models rely on linear baseline extrapolation, which also means that
+data with sloping baselines should be processed with caution. This
+section contains a brief theoretical background for each model and
+introduces the recommended measure for final result ranking. All
+ranking measures are chosen in such a way that higher values
+correspond to higher stability of the protein.</p>
+<h2 class="western"><a name="__RefHeading___Toc19559_1787345987"></a>6.2. Extensive
+and intensive readouts</h2>
+<p class="western"><span style="font-weight: normal">S</span><span style="font-weight: normal">trictly
+speaking, the models implemented in MoltenProt are only applicable to
+extensive readouts, i.e. when the signal is </span><span style="font-weight: normal">proportional
+to </span><span style="font-weight: normal">protein concentration.
+While this is the case for raw fluorescence (330 or 350 nm) and
+Scattering, the F350/F330 Ratio is an intensive readout, because it
+</span><span style="font-weight: normal">is a proxy</span><span style="font-weight: normal">
+</span><span style="font-weight: normal">for</span><span style="font-weight: normal">
+the shape of the fluorescence spectrum. </span><span style="font-weight: normal">Applying
+equations for an extensive readout to an intensive readout produces
+an</span><span style="font-weight: normal"> additional systematic
+error [2], [3]. The Ratio readout, however, tends to produce the most
+clean and </span><span style="font-weight: normal">easy to interpret</span><span style="font-weight: normal">
+sigmoidal curves, </span><span style="font-weight: normal">so
+omitting it from analysis decreases the explanatory power of the
+assay. For NanoDSF data MoltenProt also calculates deltaF readout
+(difference between fluorescence at 350 and 330 nm), which represents
+a trade-off between correctness and robustness. On the one hand,
+deltaF is an extensive readout, because it is a linear combination of
+F330 and F350. On the other hand, subtraction of fluorescences
+removes a significant part of the baseline drift and can make the
+unfolding transition more pronounced.</span></p>
+<h2 class="western"><a name="__RefHeading___Toc19561_1787345987"></a>6.3. Equilibrium
+models</h2>
+<p class="western">Equilibrium models rely on several assumptions: 1)
+protein unfolding is a reversible reaction; 2) at every timepoint of
+the measurement the system is at chemical equilibrium; 3) protein
+heat capacity change (<font face="DejaVu Sans, sans-serif">Δ</font><font face="DejaVu Sans, sans-serif">Cp)
+is temperature-independent.</font></p>
+<h3 class="western"><a name="__RefHeading___Toc9934_2219652069"></a>6.3.1. santoro1988</h3>
+<p class="western">This model (applied to chemical denaturation) was
+initially described in ref. [4]. A more elaborate discussion for
+derivation of formulas is in ref. [3]. The model assumes that the
+protein exists in either native (N) or unfolded (U) state and there
+is an equilibrium between the folding and unfolding reactions (<font face="DejaVu Sans, sans-serif">N
+</font><font face="DejaVu Sans, sans-serif">⇆ </font><font face="DejaVu Sans, sans-serif">U</font>).
+The law of signal F(T) is described by equation:</p>
+<p class="western"> 
+<img src="index_html_8a1ff70f467fcc1c.gif" name="Object1" hspace="8" width="342" height="87"/>
+
+</p>
+<p class="western">where kN, bN are slope and intercept of the
+pre-transition (native) baseline, kU bU are slope and intercept of
+post-transition baseline, R is the universal gas constant, <font face="DejaVu Sans, sans-serif">Δ</font><font face="DejaVu Sans, sans-serif">Hm
+is enthalpy of unfolding at melting temperature Tm.</font></p>
+<p class="western"><font face="DejaVu Sans, sans-serif">The final
+ranking metric is </font><font face="DejaVu Sans, sans-serif">d</font><font face="DejaVu Sans, sans-serif">G_std:
+Gibbs free energy of unfolding extrapolated to the standard state
+temperature (298.15 K). dG_std integrates the slope and the
+inflection point of an unfolding curve into a single measure.</font></p>
+<p class="western"><font face="DejaVu Sans, sans-serif">By default
+extrapolation to the standard state temperature is linear, which is
+equal to the assumption that </font><font face="DejaVu Sans, sans-serif">Δ</font><font face="DejaVu Sans, sans-serif">Cp
+</font><font face="DejaVu Sans, sans-serif">is zero. If </font><font face="DejaVu Sans, sans-serif">Δ</font><font face="DejaVu Sans, sans-serif">Cp
+</font><font face="DejaVu Sans, sans-serif">is known, the
+extrapolated dG_std can be corrected by adding </font><font face="DejaVu Sans, sans-serif">Δ</font><font face="DejaVu Sans, sans-serif">Cp
+* </font><font face="DejaVu Sans, sans-serif">dCp_component.
+dCp_component is automatically calculated in santoro1988 mode </font><font face="DejaVu Sans, sans-serif">and
+added to the output.</font></p>
+<h3 class="western"><a name="__RefHeading___Toc121325_2233964581"></a>
+6.3.2. santoro1988i 
+</h3>
+<p class="western">This model is based on the same assumptions as the
+previous one, however, three states are possible for the protein:
+native (N), unfolded (U) and unfolding intermediate (I). If the Tm
+for N and I states is significantly different, it is possible to see
+two unfolding transitions in the experimental curve (two peaks on the
+smoothened derivative curve). Derivation is also described in ref
+[5]. The law of signal is as follows:</p>
+<p class="western"> 
+<img src="index_html_165f619840c03589.gif" name="Object2" hspace="8" width="661" height="87"/>
+</p>
+<p class="western">where kN, bN are slope and intercept of the
+pre-transition (native) baseline, kU bU are slope and intercept of
+post-transition baseline, kI is the signal slope for the I state (the
+state is assumed to be short-lived, so the intercept is not
+modelled), R is the universal gas constant, <font face="DejaVu Sans, sans-serif">Δ</font><font face="DejaVu Sans, sans-serif">Hm</font><font face="DejaVu Sans, sans-serif">1
+and </font><font face="DejaVu Sans, sans-serif">Δ</font><font face="DejaVu Sans, sans-serif">Hm</font><font face="DejaVu Sans, sans-serif">2
+are</font><font face="DejaVu Sans, sans-serif"> enthalpy of unfolding
+at melting temperature T</font><font face="DejaVu Sans, sans-serif">1
+and T2 (melting temperature for N </font><font face="DejaVu Sans, sans-serif">⇆
+</font><font face="DejaVu Sans, sans-serif">I and I </font><font face="DejaVu Sans, sans-serif">⇆
+</font><font face="DejaVu Sans, sans-serif">U reactions)</font><font face="DejaVu Sans, sans-serif">.</font></p>
+<p class="western"><font face="DejaVu Sans, sans-serif">The final
+ranking metric is </font><font face="DejaVu Sans, sans-serif">d</font><font face="DejaVu Sans, sans-serif">G_comb_std:
+Gibbs free energy of unfolding extrapolated to the standard state
+temperature (298.15 K), which is a sum of dG_std for reactions  </font><font face="DejaVu Sans, sans-serif">N
+</font><font face="DejaVu Sans, sans-serif">⇆ </font><font face="DejaVu Sans, sans-serif">I
+and I </font><font face="DejaVu Sans, sans-serif">⇆ </font><font face="DejaVu Sans, sans-serif">U
+</font><font face="DejaVu Sans, sans-serif">(thermodynamic coupling).</font></p>
+<h2 class="western"><a name="__RefHeading___Toc19563_1787345987"></a>6.4. Empirical
+models</h2>
+<p class="western">Empirical models describe sigmoidal curves that
+are common in thermal unfolding assays without providing insights
+about the properties of the protein molecules.</p>
+<h3 class="western"><a name="__RefHeading___Toc121327_2233964581"></a>
+6.4.1. santoro1988d 
+</h3>
+<p class="western">This model is a &quot;descriptive&quot; version of
+santoro1988 model: instead of enthalpy of unfolding at Tm (<font face="DejaVu Sans, sans-serif">Δ</font><font face="DejaVu Sans, sans-serif">Hm</font>),
+the model uses onset temperature T_onset to describe the steepness of
+the curve. T_onset is the temperature at which 1% of protein is
+unfolded. The exponent in santoro1988 model is thus substituted to
+the following expression:</p>
+<p class="western"> 
+<img src="index_html_b873ef725266e963.gif" name="Object3" hspace="8" width="171" height="60"/>
+
+</p>
+<p class="western">The final ranking metric is the square root of the
+sum of squared Tm and T_onset. This can be thought of as the
+Euclidean distance from the point 0,0 K of a scatter plot between Tm
+and T_onset. The samples that are most far away from this point will
+have the most beneficial combination of Tm and T_onset. This ranking
+assumes that Tm and T_onset are equally important for protein
+stability.</p>
+<p class="western">See also ref. [6].</p>
+<h3 class="western"><a name="__RefHeading___Toc121329_2233964581"></a>
+6.4.2. santoro1988di 
+</h3>
+<p class="western">This model is a &quot;descriptive&quot; version of
+santoro1988i model. The exponents with <font face="DejaVu Sans, sans-serif">Δ</font><font face="DejaVu Sans, sans-serif">Hm</font><font face="DejaVu Sans, sans-serif">1-2
+and Tm1-2 are substituted to exponents using T_onset1-2 and Tm1-2
+(see santoro1988d). Similarly to santoro1988</font><font face="DejaVu Sans, sans-serif">i,</font><font face="DejaVu Sans, sans-serif">
+this model can describe unfolding curves with two transitions.</font></p>
+<p class="western"><font face="DejaVu Sans, sans-serif">T</font><font face="DejaVu Sans, sans-serif">he
+final ranking metric is the sum of geometric means of Tm1 and
+T_</font><font face="DejaVu Sans, sans-serif">onset</font><font face="DejaVu Sans, sans-serif">1
+and Tm2 and T_onset2.</font></p>
+<h2 class="western"><a name="__RefHeading___Toc19565_1787345987"></a>6.5. Kinetic
+models</h2>
+<p class="western">Kinetic models describe protein unfolding
+reactions via reaction rate constant, which links conversion of
+reactants to products with time. Arrhenius equation is used to model
+the temperature dependence of the reaction rate constant.</p>
+<h3 class="western"><a name="__RefHeading___Toc121331_2233964581"></a>
+6.5.1. irrev 
+</h3>
+<p class="western">This model assumes that protein exists in states N
+and U only and the unfolding reaction is irreversible (N → U). The
+law of signal F(T) is defined as follows:</p>
+<p class="western"> 
+<img src="index_html_b7d5b4664cef503e.gif" name="Object4" hspace="8" width="242" height="20"/>
+
+</p>
+<p class="western">where kN, bN are slope and intercept of the
+pre-transition (native) baseline, kU bU are slope and intercept of
+post-transition baseline and xN(T) is fraction of natively folded
+molecules as a function of temperature. xN(T) is obtained via numeric
+integration:</p>
+<p class="western"> 
+<img src="index_html_693cf9b4f65b9717.gif" name="Object5" hspace="8" width="260" height="48"/>
+
+</p>
+<p class="western">where Tmin and Tmax are the start and end
+temperatures of the measurement, v is the scan rate (degrees/min), Ea
+is activation energy of unfolding, Tf is the temperature where
+reaction rate constant of unfolding (k) equals 1, R is the universal
+gas constant. xN is assumed to be 1 at Tmin. See refs [5], [7] for
+derivation of similar equations for differential scanning calorimetry
+data.</p>
+<p class="western">The final ranking metric for this model is the
+negative logarithm of the reaction rate constant at standard state
+temperature (pk_std). Similarly to dG_std in santoro1988, this metric
+integrates slope and inflection point of the unfolding curve
+(represented here as Ea and Tf) in a single measure of stability.</p>
+<h3 class="western"><a name="__RefHeading___Toc121333_2233964581"></a>
+6.5.2. lumry_eyring 
+</h3>
+<p class="western">The Lumry-Eyring model [8] assumes that the
+protein exists in three states: native (N), unfolded (U) and
+aggregated (A). The reaction U → A is irreversible. Two more
+non-equilibrium reactions N → U and U → N with reaction rate
+constants kF and kR describe the transition from state N to state U.
+Fitting the whole model to typical experimental data is not stable,
+so in MoltenProt this model is applied in two steps:</p>
+<ol>
+	<li><p class="western">Scattering data (part of NanoDSF datasets if
+	the respective detector is available) is fit with irrev model to
+	obtain activation energy Ea and Tf (temperature where the rate
+	constant is 1) for reaction U → A. It is assumed that states and N
+	and U produce the same Scattering signal.</p>
+	<li><p class="western">The obtained parameters are supplied to the
+	equation that describes protein unfolding signal F(T) (e.g.
+	F350/F330 ratio in NanoDSF data) as a function of fraction native
+	state xN, fraction unfolded state xU and fraction aggregated state
+	xA.</p>
+</ol>
+<p class="western"> 
+<img src="index_html_1a64340c1caaafdc.gif" name="Object6" hspace="8" width="306" height="20"/>
+
+</p>
+<p class="western"> 
+<img src="index_html_53b9db394b61367c.gif" name="Object7" hspace="8" width="100" height="20"/>
+
+</p>
+<p class="western">where kN, bN are slope and intercept of the
+pre-transition (native) baseline, kU bU are slope and intercept of
+the post-transition baseline (which is in fact represented by the A
+state, but not U), kI is the slope for the U state of unfolding. The
+equations for xU and xA are obtained with numeric integration [5].</p>
+<p class="western">The final ranking metric for this model is the
+negative logarithm of the ratio of the reaction rate constants for
+reactions N → U and U → N calculated at standard state
+temperature (pk_ratio_std). Similarly to dG_std in santoro1988, this
+metric integrates slope and inflection point of the unfolding curve
+in a single measure of stability. The special feature of lumry_eyring
+model in MoltenProt is that it can integrate not only the information
+from individual readouts, but also combine the stability as measured
+by Scattering with one selected unfolding readout.</p>
+<h1 class="western"><a name="__RefHeading___Toc11137_2219652069"></a>7. Credits
+&amp; copyright</h1>
+<h2 class="western"><a name="__RefHeading___Toc11139_2219652069"></a>7.1. MoltenProt</h2>
+<pre>Copyright 2018,2019,2020 Vadim Kotov, Thomas C. Marlovits
+    MoltenProt is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    MoltenProt is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with MoltenProt.  If not, see &lt;https://www.gnu.org/licenses/&gt;.</pre><h2 class="western">
+<a name="__RefHeading___Toc11141_2219652069"></a>7.2. Dependencies</h2>
+<h3 class="western"><a name="__RefHeading___Toc53894_2233964581"></a>7.2.1. pandas</h3>
+<p class="western">https://pandas.pydata.org/</p>
+<pre>Copyright (c) 2008-2011, AQR Capital Management, LLC, Lambda Foundry, Inc. and PyData Development Team
+All rights reserved.
+
+Copyright (c) 2011-2020, Open source contributors.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+* Neither the name of the copyright holder nor the names of its
+  contributors may be used to endorse or promote products derived from
+  this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</pre><h3 class="western">
+<a name="__RefHeading___Toc53896_2233964581"></a>7.2.2. numpy</h3>
+<p class="western">http://numpy.org/</p>
+<pre>Copyright © 2005-2020, NumPy Developers.
+All rights reserved.
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+* Neither the name of the copyright holder nor the names of its
+  contributors may be used to endorse or promote products derived from
+  this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</pre><h3 class="western">
+<a name="__RefHeading___Toc53898_2233964581"></a>7.2.3. scipy</h3>
+<p class="western">https://scipy.org/</p>
+<pre>Copyright © 2001, 2002 Enthought, Inc.
+All rights reserved.
+
+Copyright © 2003-2019 SciPy Developers.
+All rights reserved.
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:</pre>
+<ul>
+	<li><pre>Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.</pre>
+	<li><pre>Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.</pre>
+	<li><pre>Neither the name of Enthought nor the names of the SciPy Developers may be used to endorse or promote products derived from this software without specific prior written permission.</pre>
+</ul>
+<pre>THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</pre><h3 class="western">
+<a name="__RefHeading___Toc53900_2233964581"></a>7.2.4. matplotlib</h3>
+<p class="western">https://matplotlib.org/</p>
+<p class="western">&quot;Copyright (c) 2012-2013 Matplotlib
+Development Team; All Rights Reserved&quot;</p>
+<h3 class="western"><a name="__RefHeading___Toc53902_2233964581"></a>7.2.5. PyQt5</h3>
+<p class="western">https://www.riverbankcomputing.com/software/pyqt/</p>
+<pre>PyQt5 is copyright (c) Riverbank Computing Limited.
+THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY
+APPLICABLE LAW.  EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT
+HOLDERS AND/OR OTHER PARTIES PROVIDE THE PROGRAM &quot;AS IS&quot; WITHOUT WARRANTY
+OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM
+IS WITH YOU.  SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF
+ALL NECESSARY SERVICING, REPAIR OR CORRECTION.</pre><h3 class="western">
+<a name="__RefHeading___Toc53904_2233964581"></a>7.2.6. openpyxl</h3>
+<p class="western">https://openpyxl.readthedocs.io/en/stable/</p>
+<pre>Copyright (c) 2010 openpyxl
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the
+&quot;Software&quot;), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Odict implementation in openpyxl/writer/odict.py uses the following licence:
+
+Copyright (c) 2001-2011 Python Software Foundation
+              2011 Raymond Hettinger
+License: PYTHON SOFTWARE FOUNDATION LICENSE VERSION 2
+         See http://www.opensource.org/licenses/Python-2.0 for full terms
+Note: backport changes by Raymond were originally distributed under MIT
+      license, but since the original license for Python is more 
+      restrictive than MIT, code cannot be released under its terms and
+      still adheres to the limitations of Python license.</pre><h3 class="western">
+<a name="__RefHeading___Toc53906_2233964581"></a>7.2.7. xlrd</h3>
+<p class="western">https://pypi.org/project/xlrd/</p>
+<pre>There are two licenses associated with xlrd. This one relates to the bulk of
+the work done on the library::
+
+    Portions copyright © 2005-2009, Stephen John Machin, Lingfo Pty Ltd
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+
+    2. Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+
+    3. None of the names of Stephen John Machin, Lingfo Pty Ltd and any
+    contributors may be used to endorse or promote products derived from this
+    software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+    BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+    CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+    SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+    CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+    THE POSSIBILITY OF SUCH DAMAGE.
+
+This one covers some earlier work::
+
+    /*-
+     * Copyright (c) 2001 David Giffin.
+     * All rights reserved.
+     *
+     * Based on the the Java version: Andrew Khan Copyright (c) 2000.
+     *
+     *
+     * Redistribution and use in source and binary forms, with or without
+     * modification, are permitted provided that the following conditions
+     * are met:
+     *
+     * 1. Redistributions of source code must retain the above copyright
+     *    notice, this list of conditions and the following disclaimer.
+     *
+     * 2. Redistributions in binary form must reproduce the above copyright
+     *    notice, this list of conditions and the following disclaimer in
+     *    the documentation and/or other materials provided with the
+     *    distribution.
+     *
+     * 3. All advertising materials mentioning features or use of this
+     *    software must display the following acknowledgment:
+     *    &quot;This product includes software developed by
+     *     David Giffin &lt;david@giffin.org&gt;.&quot;
+     *
+     * 4. Redistributions of any form whatsoever must retain the following
+     *    acknowledgment:
+     *    &quot;This product includes software developed by
+     *     David Giffin &lt;david@giffin.org&gt;.&quot;
+     *
+     * THIS SOFTWARE IS PROVIDED BY DAVID GIFFIN ``AS IS'' AND ANY
+     * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+     * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+     * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL DAVID GIFFIN OR
+     * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+     * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+     * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+     * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+     * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+     * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+     * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+     * OF THE POSSIBILITY OF SUCH DAMAGE.
+     *</pre><h3 class="western">
+<a name="__RefHeading___Toc53908_2233964581"></a>7.2.8. joblib</h3>
+<p class="western">https://joblib.readthedocs.io/</p>
+<pre>Copyright (c) 2008-2016, The joblib developers.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+* Neither the name of the copyright holder nor the names of its
+  contributors may be used to endorse or promote products derived from
+  this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</pre><h3 class="western">
+<a name="__RefHeading___Toc11143_2219652069"></a>7.2.9. Oxygen icons</h3>
+<p class="western">https://github.com/KDE/oxygen-icons</p>
+<pre>The Oxygen Icon Theme
+    Copyright (C) 2007 Nuno Pinheiro &lt;nuno@oxygen-icons.org&gt;
+    Copyright (C) 2007 David Vignoni &lt;david@icon-king.com&gt;
+    Copyright (C) 2007 David Miller &lt;miller@oxygen-icons.org&gt;
+    Copyright (C) 2007 Johann Ollivier Lapeyre &lt;johann@oxygen-icons.org&gt;
+    Copyright (C) 2007 Kenneth Wimer &lt;kwwii@bootsplash.org&gt;
+    Copyright (C) 2007 Riccardo Iaconelli &lt;riccardo@oxygen-icons.org&gt;
+    
+
+and others
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 3 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+
+Clarification:
+
+  The GNU Lesser General Public License or LGPL is written for
+  software libraries in the first place. We expressly want the LGPL to
+  be valid for this artwork library too.
+
+  KDE Oxygen theme icons is a special kind of software library, it is an
+  artwork library, it's elements can be used in a Graphical User Interface, or
+  GUI.
+
+  Source code, for this library means:
+   - where they exist, SVG;
+   - otherwise, if applicable, the multi-layered formats xcf or psd, or
+  otherwise png.
+
+  The LGPL in some sections obliges you to make the files carry
+  notices. With images this is in some cases impossible or hardly useful.
+
+  With this library a notice is placed at a prominent place in the directory
+  containing the elements. You may follow this practice.
+
+  The exception in section 5 of the GNU Lesser General Public License covers
+  the use of elements of this art library in a GUI.
+
+  kde-artists [at] kde.org</pre><h1 class="western">
+<a name="__RefHeading___Toc9936_2219652069"></a>8. References</h1>
+<div id="ZOTERO_BIBL {&quot;uncited&quot;:[],&quot;omitted&quot;:[],&quot;custom&quot;:[]} CSL_BIBLIOGRAPHY RNDh2RpshK2O2" dir="ltr"><p style="margin-left: 0.68cm; text-indent: -0.68cm; margin-bottom: 0cm; line-height: 0.42cm">
+	[1]	A. D. Robertson and K. P. Murphy, “Protein Structure and the
+	Energetics of Protein Stability,” <i>Chem. Rev.</i>, vol. 97, no.
+	5, pp. 1251–1268, Aug. 1997, doi: 10.1021/cr960383c.</p>
+	<p style="margin-left: 0.68cm; text-indent: -0.68cm; margin-bottom: 0cm; line-height: 0.42cm">
+	[2]	E. Monsellier and H. Bedouelle, “Quantitative measurement of
+	protein stability from unfolding equilibria monitored with the
+	fluorescence maximum wavelength,” <i>Protein Eng Des Sel</i>, vol.
+	18, no. 9, pp. 445–456, Sep. 2005, doi: 10.1093/protein/gzi046.</p>
+	<p style="margin-left: 0.68cm; text-indent: -0.68cm; margin-bottom: 0cm; line-height: 0.42cm">
+	[3]	H. Bedouelle, “Principles and equations for measuring and
+	interpreting protein stability: From monomer to tetramer,”
+	<i>Biochimie</i>, vol. 121, pp. 29–37, Feb. 2016, doi:
+	10.1016/j.biochi.2015.11.013.</p>
+	<p style="margin-left: 0.68cm; text-indent: -0.68cm; margin-bottom: 0cm; line-height: 0.42cm">
+	[4]	M. M. Santoro and D. W. Bolen, “Unfolding free energy changes
+	determined by the linear extrapolation method. 1. Unfolding of
+	phenylmethanesulfonyl .alpha.-chymotrypsin using different
+	denaturants,” <i>Biochemistry</i>, vol. 27, no. 21, pp. 8063–8068,
+	Oct. 1988, doi: 10.1021/bi00421a014.</p>
+	<p style="margin-left: 0.68cm; text-indent: -0.68cm; margin-bottom: 0cm; line-height: 0.42cm">
+	[5]	S. Mazurenko, A. Kunka, K. Beerens, C. M. Johnson, J. Damborsky,
+	and Z. Prokop, “Exploration of Protein Unfolding by Modelling
+	Calorimetry Data from Reheating,” <i>Sci Rep</i>, vol. 7, Nov.
+	2017, doi: 10.1038/s41598-017-16360-y.</p>
+	<p style="margin-left: 0.68cm; text-indent: -0.68cm; margin-bottom: 0cm; line-height: 0.42cm">
+	[6]	V. Kotov <i>et al.</i>, “High-throughput stability screening
+	for detergent-solubilized membrane proteins,” <i>Scientific
+	Reports</i>, vol. 9, no. 1, p. 10379, Jul. 2019, doi:
+	10.1038/s41598-019-46686-8.</p>
+	<p style="margin-left: 0.68cm; text-indent: -0.68cm; margin-bottom: 0cm; line-height: 0.42cm">
+	[7]	J. M. Sanchez-Ruiz, “Theoretical analysis of Lumry-Eyring
+	models in differential scanning calorimetry,” <i>Biophys J</i>,
+	vol. 61, no. 4, pp. 921–935, Apr. 1992.</p>
+	<p style="margin-left: 0.68cm; text-indent: -0.68cm; margin-bottom: 0cm; line-height: 0.42cm">
+	[8]	R. Lumry and H. Eyring, “Conformation Changes of Proteins,”
+	<i>J. Phys. Chem.</i>, vol. 58, no. 2, pp. 110–120, Feb. 1954,
+	doi: 10.1021/j150512a005.</p>
+</div>
+<p class="western"><br/>
+<br/>
+
+</p>
+</body>
+</html>

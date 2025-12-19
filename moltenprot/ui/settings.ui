@@ -1,0 +1,784 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>moltenProtToolBoxDialog</class>
+ <widget class="QDialog" name="moltenProtToolBoxDialog">
+  <property name="windowModality">
+   <enum>Qt::ApplicationModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>693</width>
+    <height>422</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MoltenProt settings</string>
+  </property>
+  <property name="toolTip">
+   <string/>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
+  </property>
+  <widget class="QDialogButtonBox" name="buttonBox">
+   <property name="geometry">
+    <rect>
+     <x>330</x>
+     <y>360</y>
+     <width>341</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
+   </property>
+   <property name="standardButtons">
+    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok|QDialogButtonBox::RestoreDefaults</set>
+   </property>
+  </widget>
+  <widget class="QToolBox" name="moltenprotToolBox">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>20</y>
+     <width>651</width>
+     <height>331</height>
+    </rect>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <widget class="QWidget" name="importPage">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>651</width>
+      <height>199</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Set up how files are imported</string>
+    </property>
+    <attribute name="label">
+     <string>Import</string>
+    </attribute>
+    <widget class="QGroupBox" name="importGroupBox">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>651</width>
+       <height>231</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Data import settings</string>
+     </property>
+     <widget class="QTabWidget" name="importTabs">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>30</y>
+        <width>651</width>
+        <height>191</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string/>
+      </property>
+      <property name="currentIndex">
+       <number>1</number>
+      </property>
+      <widget class="QWidget" name="CSV">
+       <attribute name="title">
+        <string>CSV</string>
+       </attribute>
+       <widget class="QLabel" name="decimalLabel">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>60</y>
+          <width>171</width>
+          <height>18</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Decimal Separator:</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="separatorLabel">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>91</width>
+          <height>18</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Separator:</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="decimalSeparatorInput">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>80</y>
+          <width>31</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>Set *.csv file decimal separator (default dot)</string>
+        </property>
+        <property name="inputMask">
+         <string>x</string>
+        </property>
+        <property name="text">
+         <string>.</string>
+        </property>
+        <property name="maxLength">
+         <number>1</number>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="separatorInput">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>30</y>
+          <width>31</width>
+          <height>31</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>Set *.csv file separator (default comma)</string>
+        </property>
+        <property name="inputMask">
+         <string>xx</string>
+        </property>
+        <property name="text">
+         <string>,</string>
+        </property>
+       </widget>
+       <widget class="QComboBox" name="denaturantComboBox">
+        <property name="geometry">
+         <rect>
+          <x>190</x>
+          <y>30</y>
+          <width>161</width>
+          <height>35</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>Set how protein was denatured (temperature in C or K, chemical)</string>
+        </property>
+        <item>
+         <property name="text">
+          <string>Temperature (C)</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Temperature (K)</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Chemical</string>
+         </property>
+        </item>
+       </widget>
+       <widget class="QLabel" name="denaturantLabel">
+        <property name="geometry">
+         <rect>
+          <x>190</x>
+          <y>10</y>
+          <width>151</width>
+          <height>18</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Denaturation:</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="scanRateLabel">
+        <property name="geometry">
+         <rect>
+          <x>370</x>
+          <y>10</y>
+          <width>151</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Scan rate:</string>
+        </property>
+       </widget>
+       <widget class="QDoubleSpinBox" name="scanRateSpinBox">
+        <property name="geometry">
+         <rect>
+          <x>370</x>
+          <y>30</y>
+          <width>78</width>
+          <height>28</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>Set scan rate in degrees per minute; this option is only relevant for kinetic models.</string>
+        </property>
+        <property name="minimum">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>100.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>1.000000000000000</double>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="widget">
+       <attribute name="title">
+        <string>XLSX</string>
+       </attribute>
+       <widget class="QTextBrowser" name="textBrowser">
+        <property name="geometry">
+         <rect>
+          <x>15</x>
+          <y>40</y>
+          <width>621</width>
+          <height>111</height>
+         </rect>
+        </property>
+        <property name="html">
+         <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:12pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;How to obtain an input XLSX file:&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;&amp;gt; export &amp;quot;processed&amp;quot; data from the manufacturer's software&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;&amp;gt; in the Overview sheet provide sample annotations (will be shown in the GUI)&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;&amp;gt; optionally, provide per-sample dCp values by creating an extra column with name &amp;quot;dCp&amp;quot;&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt;&quot;&gt;Parsing of an XLSX file may take a long time, consider saving a MoltenProt session to JSON right after import.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+       <widget class="QCheckBox" name="refoldingCheckBox">
+        <property name="geometry">
+         <rect>
+          <x>20</x>
+          <y>10</y>
+          <width>201</width>
+          <height>25</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>Indicate if refolding ramp was used</string>
+        </property>
+        <property name="text">
+         <string>Refolding data</string>
+        </property>
+       </widget>
+      </widget>
+     </widget>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="exportPage">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>98</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Set output options</string>
+    </property>
+    <attribute name="label">
+     <string>Export</string>
+    </attribute>
+    <widget class="QGroupBox" name="exportGroupBox">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>651</width>
+       <height>181</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Data export settings</string>
+     </property>
+     <widget class="QComboBox" name="outputFormatComboBox">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>30</y>
+        <width>110</width>
+        <height>34</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>Select output format: several *.csv files or one *.xlsx</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>*.csv</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string notr="true">*.xlsx</string>
+       </property>
+      </item>
+     </widget>
+     <widget class="QCheckBox" name="heatmapCheckBox">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>80</y>
+        <width>151</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>Save heatmaps</string>
+      </property>
+      <property name="text">
+       <string>Heatmaps</string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="outputReportComboBox">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>480</x>
+        <y>30</y>
+        <width>151</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>Summarize the results in a report</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>None</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Compact XLSX</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Interactive HTML</string>
+       </property>
+      </item>
+     </widget>
+     <widget class="QLabel" name="outputFormatLabel">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>40</y>
+        <width>131</width>
+        <height>18</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Data table format:</string>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="genpicsCheckBox">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>80</y>
+        <width>111</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>Save plots for individual samples</string>
+      </property>
+      <property name="text">
+       <string>Figures</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="outputReportTypeLabel">
+      <property name="geometry">
+       <rect>
+        <x>384</x>
+        <y>40</y>
+        <width>101</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Report type:</string>
+      </property>
+     </widget>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="miscSettings">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>98</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <attribute name="label">
+     <string>Misc.</string>
+    </attribute>
+    <widget class="QLabel" name="parallelSpinBoxLabel">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>40</y>
+       <width>181</width>
+       <height>18</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Parallel processes:</string>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="parallelSpinBox">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>60</y>
+       <width>88</width>
+       <height>35</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>If your computer has several cores, select number of cores used to process your data. </string>
+     </property>
+     <property name="minimum">
+      <number>1</number>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="colormapForPlotComboBox">
+     <property name="geometry">
+      <rect>
+       <x>260</x>
+       <y>60</y>
+       <width>131</width>
+       <height>32</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Matplotlib colormap to color buttons in the result heatmap</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="colormapForPlotLabel">
+     <property name="geometry">
+      <rect>
+       <x>260</x>
+       <y>40</y>
+       <width>221</width>
+       <height>18</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Colormap for heatmap:</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="PlotSettings">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>651</width>
+      <height>199</height>
+     </rect>
+    </property>
+    <attribute name="label">
+     <string>Plots</string>
+    </attribute>
+    <widget class="QComboBox" name="curveTypeComboBox">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>40</y>
+       <width>171</width>
+       <height>35</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Which data to plot</string>
+     </property>
+     <item>
+      <property name="text">
+       <string>Experimental signal</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Baseline-corrected</string>
+      </property>
+     </item>
+    </widget>
+    <widget class="QComboBox" name="curveViewComboBox">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>120</y>
+       <width>170</width>
+       <height>35</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>How to plot data</string>
+     </property>
+     <item>
+      <property name="text">
+       <string>Datapoints + Fit</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Datapoints</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Fit</string>
+      </property>
+     </item>
+    </widget>
+    <widget class="QLabel" name="curveTypeLabel">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>10</y>
+       <width>151</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Display curve:</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="curveViewLabel">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>90</y>
+       <width>151</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Display as:</string>
+     </property>
+    </widget>
+    <widget class="QGroupBox" name="additionalElementsGroupBox">
+     <property name="geometry">
+      <rect>
+       <x>200</x>
+       <y>0</y>
+       <width>201</width>
+       <height>171</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Additional elements:</string>
+     </property>
+     <widget class="QCheckBox" name="curveVlinesCheckBox">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>70</y>
+        <width>181</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>Show fit parameters that are on X-axis (e.g. Tm)</string>
+      </property>
+      <property name="text">
+       <string>Vertical lines</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="curveMarkEverySpinBoxLabel">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>100</y>
+        <width>131</width>
+        <height>18</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Show every:</string>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="curveBaselineCheckBox">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>40</y>
+        <width>181</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>Show pre- and post-transition baselines</string>
+      </property>
+      <property name="text">
+       <string>Baselines</string>
+      </property>
+     </widget>
+     <widget class="QSpinBox" name="curveMarkEverySpinBox">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>130</y>
+        <width>60</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string extracomment="blah">Plot every n'th experimental datapoint</string>
+      </property>
+      <property name="minimum">
+       <number>1</number>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QGroupBox" name="subplotsGroupBox">
+     <property name="geometry">
+      <rect>
+       <x>440</x>
+       <y>0</y>
+       <width>191</width>
+       <height>171</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Subplots:</string>
+     </property>
+     <widget class="QCheckBox" name="curveDerivativeCheckBox">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>40</y>
+        <width>171</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>Show smoothened experimental derivative in a separate plot</string>
+      </property>
+      <property name="text">
+       <string>Derivative plot</string>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="curveLegendCheckBox">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>70</y>
+        <width>181</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>Show legend in the plot window</string>
+      </property>
+      <property name="text">
+       <string>Legend</string>
+      </property>
+     </widget>
+    </widget>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>moltenProtToolBoxDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>moltenProtToolBoxDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>clicked(QAbstractButton*)</signal>
+   <receiver>moltenProtToolBoxDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>500</x>
+     <y>375</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>346</x>
+     <y>210</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <designerdata>
+  <property name="gridDeltaX">
+   <number>10</number>
+  </property>
+  <property name="gridDeltaY">
+   <number>10</number>
+  </property>
+  <property name="gridSnapX">
+   <bool>true</bool>
+  </property>
+  <property name="gridSnapY">
+   <bool>true</bool>
+  </property>
+  <property name="gridVisible">
+   <bool>true</bool>
+  </property>
+ </designerdata>
+</ui>

@@ -1,0 +1,56 @@
+<RCC>
+  <qresource prefix="/">
+    <file alias="export.svgz">ui/icons/document-export-table.svgz</file>
+<!--     <file alias="export.png">ui/icons/document-export-table.png</file> -->
+    <file alias="editlayout.svgz">ui/icons/view-form-table.svgz</file>
+<!--     <file alias="editlayout.png">ui/icons/view-form-table.png</file> -->
+    <file alias="savewindow.svgz">ui/icons/view-preview.svgz</file>
+<!--     <file alias="savewindow.png">ui/icons/view-preview.png</file> -->
+    <file alias="protocol.svgz">ui/icons/dialog-information.svgz</file>
+<!--     <file alias="protocol.png">ui/icons/dialog-information.png</file> -->
+    <file alias="preferences.svgz">ui/icons/preferences-system.svgz</file>
+<!--    <file alias="preferences.png">ui/icons/preferences-system.png</file>-->
+    <file alias="clear.svgz">ui/icons/edit-clear.svgz</file>
+<!--     <file alias="clear.png">ui/icons/edit-clear.png</file> -->
+    <file alias="selectall.svgz">ui/icons/office-chart-line.svgz</file>
+<!--     <file alias="selectall.png">ui/icons/office-chart-line.png</file> -->
+    <file alias="analysis.svgz">ui/icons/Charm.svgz</file>
+<!--     <file alias="analysis.png">ui/icons/Charm.png</file> -->
+    <file alias="filenew.svgz">ui/icons/document-new.svgz</file>
+<!--     <file alias="filenew.png">ui/icons/filenew.png</file> -->
+    <file alias="help.svgz">ui/icons/system-help.svgz</file>
+<!--     <file alias="help.png">ui/icons/system-help.png</file> -->
+    <file alias="cite.svgz">ui/icons/text-rtf.svgz</file>
+<!--     <file alias="cite.png">ui/icons/text-rtf.png</file> -->
+    <file alias="home.svgz">ui/icons/go-home.svgz</file>
+<!--     <file alias="home.png">ui/icons/home.png</file> -->
+    <file alias="back.svgz">ui/icons/go-previous.svgz</file>
+<!--     <file alias="back.png">ui/icons/back.png</file> -->
+    <file alias="filequit.svgz">ui/icons/dialog-error.svgz</file>
+<!--     <file alias="filequit.png">ui/icons/filequit.png</file> -->
+<!--     <file>ui/icons/document-close.svgz</file> -->
+    <file alias="fileopen.svgz">ui/icons/folder-open.svgz</file>
+<!--     <file>ui/icons/document-open-recent.svgz</file> -->
+<!--     <file alias="fileopen.png">ui/icons/fileopen.png</file> -->
+    <file alias="filesaveas.svgz">ui/icons/document-save-as.svgz</file>
+<!--     <file>ui/icons/document-save-as.svgz</file> -->
+<!--     <file alias="filesaveas.png">ui/icons/filesaveas.png</file> -->
+    <file alias="font.svgz">ui/icons/preferences-desktop-font.svgz</file>
+    <file alias="MP_icon.png">ui/icons/app_icon.png</file>
+    <file alias="splash.png">ui/splashscreen.png</file>
+    <file alias="analysis.ui">ui/analysis.ui</file>
+    <file alias="layout.ui">ui/layout.ui</file>
+    <file alias="main.ui">ui/main.ui</file>
+    <file alias="settings.ui">ui/settings.ui</file>
+    <file alias="index_html_1a64340c1caaafdc.gif">doc/index_html_1a64340c1caaafdc.gif</file>
+    <file alias="index_html_8a1ff70f467fcc1c.gif">doc/index_html_8a1ff70f467fcc1c.gif</file>
+    <file alias="index_html_53b9db394b61367c.gif">doc/index_html_53b9db394b61367c.gif</file>
+    <file alias="index_html_165f619840c03589.gif">doc/index_html_165f619840c03589.gif</file>
+    <file alias="index_html_693cf9b4f65b9717.gif">doc/index_html_693cf9b4f65b9717.gif</file>
+    <file alias="index_html_b7d5b4664cef503e.gif">doc/index_html_b7d5b4664cef503e.gif</file>
+    <file alias="index_html_b873ef725266e963.gif">doc/index_html_b873ef725266e963.gif</file>
+    <file alias="index.html">doc/index.html</file>
+    <file alias="colormaps.png">doc/colormaps.png</file>
+    <file alias="MainWindow.png">doc/MainWindow.png</file>
+  </qresource>
+</RCC>

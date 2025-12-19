@@ -1,0 +1,182 @@
+
+<!DOCTYPE html>
+<html>
+
+<!--
+Copyright 2018,2019,2020 Vadim Kotov
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.  This file is offered as-is,
+without any warranty.
+-->
+
+<head>
+<title>Thermostability Report for $FILE</title>
+<!-- <link rel="icon" href="favicon.png"> -->
+<meta charset="UTF-8">
+
+<style>
+
+        
+.flexbox {
+    display: -ms-flex;
+    display: -webkit-flex;
+    display: flex;
+}
+
+/* settings for flex-column with heatmap */
+.heatmap {
+    /*background: #a0ffa0;*/
+    width: 50%;
+}
+
+/* settings for flex-column with plots*/
+.plot {
+    /*background: #a0a0ff;*/
+    width: 50%;
+}
+
+/* scale down the plot images */
+img.resize {
+    max-width:80%;
+    max-height:80%;
+}
+
+
+/* Table for heatmap */
+.Table
+{
+    display: table;
+    table-layout: fixed;
+    width: 96%;
+}
+.Title
+{
+    display: table-caption;
+    text-align: center;
+    font-weight: bold;
+    font-size: larger;
+}
+.Heading
+{
+    display: table-row;
+    font-weight: bold;
+    text-align: center;
+}
+.Row
+{
+    display: table-row;
+}
+.Cell
+{
+    width: 8%;
+    display: table-cell;
+    border: solid;
+    border-width: thin;
+    text-align: center;
+    padding: 10px;
+    /* default color - sample was not analysed - probably not used at all */
+    background-color: lightgray;
+}
+
+/* Highlight cell on mouseover*/
+
+.Cell:hover {
+    box-shadow: inset 0 0 1em yellow
+}
+</style>
+
+
+</head>
+
+
+<body>
+
+<div class="flexbox">
+    
+    <div class="heatmap" align=center>
+        <!--old code for heatmap table, there was a todo to create a separate style and dollar-heatmap is for Python's string substitution
+        <div class="Table">
+            <div class="Title">
+                <p>Heatmap of Results</p>
+                
+                <i style="font-size:0.8em; font-weight:normal"> Click on the wells to open plots in a separate window </i>
+            </div>
+
+            dollar-heatmap
+        
+        </div>
+        -->
+        
+        <!--This will be substituted by one or more heatmaps-->
+        $HEATMAP_TABLE
+        
+        <!--Text displayed below the heatmap with information on the sample, ideally with conditions from the layout-->
+        <p id="sample_info" align="left">Sample:</p>
+        
+        <!-- helper variable to debug JS stuff
+        <p id="debugger" align='left'>debugger</p>
+        -->
+
+        
+        <!--buttons to switch between different heatmaps-->
+        <div style='display:$DISPLAY_BUTTONS'>
+            $BUTTONS
+            <!-- example code that should work with JS below
+            <input type="button" onclick="openHeatmap('f330')" value="F330" style='float:left' />
+            <input type="button" onclick="openHeatmap('f350')" value="F350" style='float:left'/>
+            -->
+            <!-- an alternative button implementation
+            <button onclick="openHeatmap('f330')" style='float:left'>F330</button>
+            <button onclick="openHeatmap('f350')" style='float:left'>F350</button>
+            -->
+        </div>
+        <!--button to open the output XLSX file-->
+        <input title="Open a spreadsheet with results for the current readout" type="button" onclick="loadReport()" value="Output XLSX file" style='float:middle' /><br />
+        
+        <p align='left'>
+            This report was generated with MoltenProt v. $VERSION on $TIMESTAMP.</br>
+            <i>If you found this software helpful, please cite:</i>
+            <a href="https://www.cell.com/biophysj/fulltext/S0006-3495(18)32325-7">Kotov et al., Biophysical Journal. 116, 191a (2019)</a>
+        </p>
+    </div>
+    
+    <div class="plot" align=center>
+        <img class=resize id="plot" src="" alt="Select a sample for display" />
+    </div>
+</div>
+
+<script>
+//global variable to know which heatmap is shown
+//this affects which plots are opened during mouseOver()
+var currentHeatmap = '$FIRST_HEATMAP'
+
+//opens respective plots on the right part of the HTML
+function mouseOver(id, condition){
+    document.getElementById("plot").src=currentHeatmap + "_resources/" + id +".png"
+    document.getElementById("sample_info").innerHTML="Sample: " + id + ", " + condition
+}
+//changes heatmaps on button click
+function openHeatmap(heatmapName){
+    var i;
+    var x = document.getElementsByClassName("Table");
+    //print some stuff to an HTML element with id "debugger"
+    //document.getElementById("debugger").innerHTML=document.getElementById(heatmapName).style.display
+    for (i = 0; i < x.length; i++){
+        x[i].style.display = 'none';
+    }
+    document.getElementById(heatmapName).style.display = '';
+    // change the name of heatmap currently displayed
+    currentHeatmap = heatmapName
+}
+// returns the location of Results.xlsx for the current heatmap
+function loadReport(){
+    window.location = currentHeatmap+"_resources/"+ currentHeatmap + "_Results.xlsx";
+}
+</script>
+
+
+</body>
+</html>            
+        

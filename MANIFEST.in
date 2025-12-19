@@ -1,0 +1,8 @@
+include moltenprot/resources/*
+include moltenprot/ui/resources.py
+include moltenprot/ui/icons/app_icon.ico
+include moltenprot/doc/index.html
+include moltenprot/doc/index.pdf
+include moltenprot/doc/*.png
+include moltenprot/doc/*.gif
+include moltenprot/VERSION

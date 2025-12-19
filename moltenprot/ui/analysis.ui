@@ -1,0 +1,430 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>analysisDialog</class>
+ <widget class="QWidget" name="analysisDialog">
+  <property name="windowModality">
+   <enum>Qt::ApplicationModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>617</width>
+    <height>417</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Analysis</string>
+  </property>
+  <widget class="QTabWidget" name="tabWidget">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>591</width>
+     <height>331</height>
+    </rect>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <widget class="QWidget" name="basicTab">
+    <attribute name="title">
+     <string>Basic</string>
+    </attribute>
+    <widget class="QTableView" name="analysisTableView">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>561</width>
+       <height>271</height>
+      </rect>
+     </property>
+     <property name="sizeAdjustPolicy">
+      <enum>QAbstractScrollArea::AdjustToContents</enum>
+     </property>
+     <property name="alternatingRowColors">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="preprocessTab">
+    <attribute name="title">
+     <string>Preprocess</string>
+    </attribute>
+    <widget class="QCheckBox" name="medianFilterCheckBox">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>391</width>
+       <height>27</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>&lt;Link to CLI description&gt;</string>
+     </property>
+     <property name="text">
+      <string>Smoothen curves by median filtering</string>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="medianFilterSpinBox">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>220</x>
+       <y>40</y>
+       <width>60</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>&lt;Link to CLI description&gt;</string>
+     </property>
+     <property name="prefix">
+      <string/>
+     </property>
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>100</number>
+     </property>
+     <property name="singleStep">
+      <number>1</number>
+     </property>
+     <property name="value">
+      <number>4</number>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="shrinkCheckBox">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>60</y>
+       <width>331</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>&lt;Link to CLI description&gt;</string>
+     </property>
+     <property name="text">
+      <string>Shrink data</string>
+     </property>
+    </widget>
+    <widget class="QDoubleSpinBox" name="shrinkDoubleSpinBox">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>220</x>
+       <y>90</y>
+       <width>60</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>Set minimal signal-to-noise ratio</string>
+     </property>
+     <property name="prefix">
+      <string/>
+     </property>
+     <property name="maximum">
+      <double>100.000000000000000</double>
+     </property>
+     <property name="singleStep">
+      <double>0.100000000000000</double>
+     </property>
+     <property name="value">
+      <double>0.500000000000000</double>
+     </property>
+    </widget>
+    <widget class="QLabel" name="filterWindowSizeLabel">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>40</y>
+       <width>161</width>
+       <height>18</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Filter window size, deg</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="shrinkNewdTValueLabel">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>90</y>
+       <width>151</width>
+       <height>18</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>New dT value</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="labelTempRangeMin">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>120</y>
+       <width>401</width>
+       <height>18</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Remove from curve start (in X-axis units)</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="labelTempRangeMax">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>170</y>
+       <width>401</width>
+       <height>18</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Remove from curve end (in X-axis units)</string>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="tempRangeMaxSpinBox">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>190</y>
+       <width>51</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="value">
+      <number>0</number>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="tempRangeMinSpinBox">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>140</y>
+       <width>51</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="value">
+      <number>0</number>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="miscTab">
+    <attribute name="title">
+     <string>Misc</string>
+    </attribute>
+    <widget class="QSpinBox" name="savgolSpinBox">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>40</y>
+       <width>61</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>&lt;Link to CLI description&gt;</string>
+     </property>
+     <property name="prefix">
+      <string/>
+     </property>
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>100</number>
+     </property>
+     <property name="singleStep">
+      <number>1</number>
+     </property>
+     <property name="value">
+      <number>10</number>
+     </property>
+    </widget>
+    <widget class="QLabel" name="savgolLabel">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>401</width>
+       <height>18</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Savitzky-Golay window size (for derivative), X-axis units</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="baselineFitLabel">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>70</y>
+       <width>381</width>
+       <height>18</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Data length for baseline fit estimation, X-axis units</string>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="baselineFitSpinBox">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>100</y>
+       <width>61</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>&lt;Link to CLI description&gt;</string>
+     </property>
+     <property name="prefix">
+      <string/>
+     </property>
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>100</number>
+     </property>
+     <property name="singleStep">
+      <number>1</number>
+     </property>
+     <property name="value">
+      <number>10</number>
+     </property>
+    </widget>
+    <widget class="QLabel" name="baselineBoundsLabel">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>130</y>
+       <width>381</width>
+       <height>18</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Baseline bounds (n*stdev)</string>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="baselineBoundsSpinbox">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>160</y>
+       <width>70</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>&lt;Link to CLI description&gt;</string>
+     </property>
+     <property name="prefix">
+      <string/>
+     </property>
+     <property name="minimum">
+      <number>0</number>
+     </property>
+     <property name="maximum">
+      <number>100</number>
+     </property>
+     <property name="singleStep">
+      <number>1</number>
+     </property>
+     <property name="value">
+      <number>3</number>
+     </property>
+    </widget>
+    <widget class="QLabel" name="dCpLabel">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>190</y>
+       <width>401</width>
+       <height>18</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Heat capacity change (dCp), J/mol/K</string>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="dCpSpinBox">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>220</y>
+       <width>61</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>&lt;Link to CLI description&gt;</string>
+     </property>
+     <property name="prefix">
+      <string/>
+     </property>
+     <property name="minimum">
+      <number>0</number>
+     </property>
+     <property name="maximum">
+      <number>10000</number>
+     </property>
+     <property name="singleStep">
+      <number>1</number>
+     </property>
+     <property name="value">
+      <number>0</number>
+     </property>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QDialogButtonBox" name="buttonBox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>360</y>
+     <width>591</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="standardButtons">
+    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok|QDialogButtonBox::RestoreDefaults</set>
+   </property>
+   <property name="centerButtons">
+    <bool>false</bool>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

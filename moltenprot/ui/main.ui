@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1221</width>
+    <height>773</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MoltenProt</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="minimumSize">
+    <size>
+     <width>1122</width>
+     <height>535</height>
+    </size>
+   </property>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1221</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionNew"/>
+    <addaction name="actionLoad"/>
+    <addaction name="actionExport"/>
+    <addaction name="actionSave_as_JSON"/>
+    <addaction name="separator"/>
+    <addaction name="actionQuit"/>
+   </widget>
+   <widget class="QMenu" name="menuSettings">
+    <property name="title">
+     <string>Actions</string>
+    </property>
+    <addaction name="separator"/>
+    <addaction name="actionAnalysis"/>
+    <addaction name="actionEdit_layout"/>
+    <addaction name="actionSelectAll"/>
+    <addaction name="actionDeselectAll"/>
+    <addaction name="actionActions"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionHelp"/>
+    <addaction name="separator"/>
+    <addaction name="actionCite_MoltenProt"/>
+    <addaction name="actionAbout"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuSettings"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="fileToolBar">
+   <property name="windowTitle">
+    <string>File</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionNew"/>
+   <addaction name="actionLoad"/>
+   <addaction name="actionSave_as_JSON"/>
+   <addaction name="actionExport"/>
+   <addaction name="actionQuit"/>
+   <addaction name="separator"/>
+  </widget>
+  <widget class="QToolBar" name="actionToolBar">
+   <property name="windowTitle">
+    <string>Analysis</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionAnalysis"/>
+   <addaction name="actionSelectAll"/>
+   <addaction name="actionDeselectAll"/>
+  </widget>
+  <widget class="QDockWidget" name="protocolDockWidget">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>920</width>
+     <height>144</height>
+    </size>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::BottomDockWidgetArea</set>
+   </property>
+   <property name="windowTitle">
+    <string>Protocol Window</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="QWidget" name="protocolDockWidgetContents">
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QLabel" name="runAnalysisCounterLabel">
+       <property name="text">
+        <string>runAnalysisCounterTextLabel</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPlainTextEdit" name="protocolPlainTextEdit">
+       <property name="acceptDrops">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>Here various messages will be printed.</string>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QToolBar" name="miscToolBar">
+   <property name="windowTitle">
+    <string>Miscelenious</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionShowHideProtocol"/>
+   <addaction name="actionEdit_layout"/>
+   <addaction name="actionActions"/>
+   <addaction name="actionPrtSc"/>
+   <addaction name="actionFont"/>
+  </widget>
+  <widget class="QDockWidget" name="heatmapDockWidget">
+   <property name="windowTitle">
+    <string>Heatmap</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="heatmapDockWidgetContents"/>
+  </widget>
+  <widget class="QDockWidget" name="tableDockWidget">
+   <property name="windowTitle">
+    <string>Displayed samples</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="tableDockWidgetContents">
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QTableWidget" name="tableWidget">
+       <property name="alternatingRowColors">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <action name="actionLoad">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/fileopen.svgz</normaloff>:/fileopen.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>Load</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+L</string>
+   </property>
+  </action>
+  <action name="actionExport">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/export.svgz</normaloff>:/export.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>Export</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+E</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionQuit">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/filequit.svgz</normaloff>:/filequit.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>Quit</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="actionAnalysis">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/analysis.svgz</normaloff>:/analysis.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>Analysis</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+A</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About MoltenProt</string>
+   </property>
+   <property name="shortcut">
+    <string>F1</string>
+   </property>
+  </action>
+  <action name="actionDeselectAll">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/clear.svgz</normaloff>:/clear.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>Deselect All</string>
+   </property>
+   <property name="toolTip">
+    <string>Clear all samples selection.</string>
+   </property>
+  </action>
+  <action name="actionEdit_layout">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/editlayout.svgz</normaloff>:/editlayout.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>Edit layout</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionNew">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/filenew.svgz</normaloff>:/filenew.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>New</string>
+   </property>
+   <property name="toolTip">
+    <string>Start new instance of program</string>
+   </property>
+  </action>
+  <action name="actionHelp">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/help.svgz</normaloff>:/help.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>MoltenProt help</string>
+   </property>
+  </action>
+  <action name="actionSave_as_JSON">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/filesaveas.svgz</normaloff>:/filesaveas.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>Save as JSON</string>
+   </property>
+  </action>
+  <action name="actionActions">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/preferences.svgz</normaloff>:/preferences.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>Settings</string>
+   </property>
+   <property name="toolTip">
+    <string>MoltenProt Settings</string>
+   </property>
+  </action>
+  <action name="actionPrtSc">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/savewindow.svgz</normaloff>:/savewindow.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>PrtSc</string>
+   </property>
+   <property name="toolTip">
+    <string>Save MoltenProt Main window as png file.</string>
+   </property>
+  </action>
+  <action name="actionSelectAll">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/selectall.svgz</normaloff>:/selectall.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>Select All</string>
+   </property>
+   <property name="toolTip">
+    <string>Press to select all samples</string>
+   </property>
+  </action>
+  <action name="actionCite_MoltenProt">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/cite.svgz</normaloff>:/cite.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>Cite MoltenProt</string>
+   </property>
+  </action>
+  <action name="actionShowHideProtocol">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/protocol.svgz</normaloff>:/protocol.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>P</string>
+   </property>
+   <property name="toolTip">
+    <string>Press to Show/Hide the Protocol window.</string>
+   </property>
+  </action>
+  <action name="actionFont">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/font.svgz</normaloff>:/font.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>Font</string>
+   </property>
+   <property name="toolTip">
+    <string>Select font family and font size.</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>
