@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1221</width>
-    <height>773</height>
+    <height>779</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,7 +27,7 @@
      <x>0</x>
      <y>0</y>
      <width>1221</width>
-     <height>22</height>
+     <height>27</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -37,6 +37,7 @@
     <addaction name="actionNew"/>
     <addaction name="actionLoad"/>
     <addaction name="actionExport"/>
+    <addaction name="actionLoad_sample_data"/>
     <addaction name="actionSave_as_JSON"/>
     <addaction name="separator"/>
     <addaction name="actionQuit"/>
@@ -368,6 +369,15 @@
    </property>
    <property name="toolTip">
     <string>Select font family and font size.</string>
+   </property>
+  </action>
+  <action name="actionLoad_sample_data">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/fileopen.svgz</normaloff>:/fileopen.svgz</iconset>
+   </property>
+   <property name="text">
+    <string>Load sample data</string>
    </property>
   </action>
  </widget>

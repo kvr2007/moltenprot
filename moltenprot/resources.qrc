@@ -42,13 +42,14 @@
     <file alias="layout.ui">ui/layout.ui</file>
     <file alias="main.ui">ui/main.ui</file>
     <file alias="settings.ui">ui/settings.ui</file>
-    <file alias="index_html_1a64340c1caaafdc.gif">doc/index_html_1a64340c1caaafdc.gif</file>
-    <file alias="index_html_8a1ff70f467fcc1c.gif">doc/index_html_8a1ff70f467fcc1c.gif</file>
-    <file alias="index_html_53b9db394b61367c.gif">doc/index_html_53b9db394b61367c.gif</file>
-    <file alias="index_html_165f619840c03589.gif">doc/index_html_165f619840c03589.gif</file>
-    <file alias="index_html_693cf9b4f65b9717.gif">doc/index_html_693cf9b4f65b9717.gif</file>
-    <file alias="index_html_b7d5b4664cef503e.gif">doc/index_html_b7d5b4664cef503e.gif</file>
-    <file alias="index_html_b873ef725266e963.gif">doc/index_html_b873ef725266e963.gif</file>
+    <file alias="index_html_2d7af490e6dbbe73.gif">doc/index_html_2d7af490e6dbbe73.gif</file>
+    <file alias="index_html_17739bb47c7268db.gif">doc/index_html_17739bb47c7268db.gif</file>
+    <file alias="index_html_972f396eb9b2c093.gif">doc/index_html_972f396eb9b2c093.gif</file>
+    <file alias="index_html_bc337a29c412f7cd.gif">doc/index_html_bc337a29c412f7cd.gif</file>
+    <file alias="index_html_a3455a114d2972b5.gif">doc/index_html_a3455a114d2972b5.gif</file>
+    <file alias="index_html_78f389c9a8f15d66.gif">doc/index_html_78f389c9a8f15d66.gif</file>
+    <file alias="index_html_fa319f0e1b962a4a.gif">doc/index_html_fa319f0e1b962a4a.gif</file>
+
     <file alias="index.html">doc/index.html</file>
     <file alias="colormaps.png">doc/colormaps.png</file>
     <file alias="MainWindow.png">doc/MainWindow.png</file>

@@ -14,6 +14,11 @@ a = Analysis(['moltenprot\\__main__.py'],
              win_private_assemblies=False,
              cipher=block_cipher,
              noarchive=False)
+
+# add folder with demo files, based on this solution
+# https://stackoverflow.com/questions/11322538/including-a-directory-using-pyinstaller
+a.datas += Tree('.\\moltenprot\\demo_data', prefix='moltenprot\\demo_data')
+
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,

@@ -1,5 +1,5 @@
 """
-Copyright 2020 Vadim Kotov, Thomas C. Marlovits
+Copyright 2020,2021 Vadim Kotov, Thomas C. Marlovits
 
     This file is part of MoltenProt.
 
@@ -66,7 +66,13 @@ class MoltenProtModel:
         For interactive prompts or print() - show the model description
         """
         return self._description
-
+    
+    def __str__(self):
+        """
+        When converting to a string return the short name
+        """
+        return self.short_name
+    
     def param_names(self):
         """
         Return parameter names encoded in the function declaration as a list
@@ -143,19 +149,19 @@ class EquilibriumThreeState(MoltenProtModel):
     _description = "N <-> I <-> U"
     # in theory total stability of the protein is the sum of stabilities of N and I
     sortby = "dG_comb_std"
-    # this way the search through the curve will be more balanced
-    def fun(self, T, kN, bN, kU, bU, kI, dHm1, T1, dHm2, T2):
+    def fun(self, T, kN, bN, kU, bU, kI, dHm1, T1, dHm2, dT2_1):
+        # dT2_1 = T2 - T1, i.e. the distance between the two transitions
         return (
             kN * T
             + bN
             + kI * np.exp(dHm1 / R * (1 / T1 - 1 / T))
             + (kU * T + bU)
             * np.exp(dHm1 / R * (1 / T1 - 1 / T))
-            * np.exp(dHm2 / R * (1 / T2 - 1 / T))
+            * np.exp(dHm2 / R * (1 / (T1 + dT2_1) - 1 / T))
         ) / (
             1
             + np.exp(dHm1 / R * (1 / T1 - 1 / T))
-            + np.exp(dHm1 / R * (1 / T1 - 1 / T)) * np.exp(dHm2 / R * (1 / T2 - 1 / T))
+            + np.exp(dHm1 / R * (1 / T1 - 1 / T)) * np.exp(dHm2 / R * (1 / (T1 + dT2_1) - 1 / T))
         )
 
     def param_bounds(self, input_data=None):
@@ -163,6 +169,8 @@ class EquilibriumThreeState(MoltenProtModel):
         if input_data is None:
             return super().param_bounds(None)
         else:
+            # by definition T2 follows T1, so dT2_1 is > 0
+            # the upper bound for dT2_1 is 1/2 of the full temperature range (i.e. the limit on max distance between the two Tms)
             return (
                 (
                     -np.inf,
@@ -173,7 +181,9 @@ class EquilibriumThreeState(MoltenProtModel):
                     -np.inf,
                     min(input_data.index),
                     -np.inf,
-                    min(input_data.index),
+                    0,
+                    # allow dT2_1 to be +/-
+                    #-(max(input_data.index) - min(input_data.index)) / 3,
                 ),
                 (
                     np.inf,
@@ -184,17 +194,17 @@ class EquilibriumThreeState(MoltenProtModel):
                     np.inf,
                     max(input_data.index),
                     np.inf,
-                    max(input_data.index),
+                    (max(input_data.index) - min(input_data.index)) / 2,
                 ),
             )
 
     def param_init(self, input_data=None):
         # Initial parameters - pre baseline has no intercept and are 45 degree slope
+        # For dT2_1 we start from the assumption that dT2_1=0, i.e. there is no 2nd transition
         if input_data is None:
-            return (1, 0, 2, 0, 1, 100000, 0, 100000, 1)
+            return (1, 0, 2, 0, 1, 100000, 0, 100000, 0)
         else:
-            # TESTING for intiial parameters take 0.25 and 0.75 of temp range respectively
-            # this way the search through the curve will be more balanced
+            # T1 is heuristically placed in the middle of the temp range
             temp_range = max(input_data.index) - min(input_data.index)
             return (
                 1,
@@ -203,9 +213,9 @@ class EquilibriumThreeState(MoltenProtModel):
                 0,
                 1,
                 100000,
-                min(input_data.index) + 0.25 * temp_range,
+                min(input_data.index) + 0.5 * temp_range,
                 100000,
-                max(input_data.index) - 0.25 * temp_range,
+                0,
             )
 
 

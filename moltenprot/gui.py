@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2018,2019 Vadim Kotov, Thomas C. Marlovits
+# Copyright 2018-2021 Vadim Kotov, Thomas C. Marlovits
 #
 #   This file is part of MoltenProt.
 #
@@ -35,7 +35,6 @@ import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib import cm
-import matplotlib.gridspec as gridspec
 
 # import PyQt5
 try:
@@ -99,24 +98,24 @@ cfFilename = getframeinfo(cf).filename
 # check if core can do parallelization and set cpuCount
 if core.parallelization:
     from multiprocessing import cpu_count
-
     cpuCount = cpu_count()
 else:
     cpuCount = 1
+
+# for passing clicked button ID's
+from functools import partial
 
 showVersionInformation = False
 if showVersionInformation:
     core.showVersionInformation()
     print("PyQt5            : {}".format(PYQT_VERSION_STR))
 
-# set the color cycle for plots
-# TODO create a custom matplolib rc file
-# Color-safe 8-color palette from https://jfly.uni-koeln.de/color/
+# A cycler for color-safe 8-color palette from https://jfly.uni-koeln.de/color/
 from cycler import cycler
+import traceback
 
-# \brief Color-safe 8-color palette from https://jfly.uni-koeln.de/color/
-matplotlib.rcParams["axes.prop_cycle"] = cycler(
-    color=[
+# Color-safe 8-color palette from https://jfly.uni-koeln.de/color/
+colorsafe_cycler = cycler( color = [
         "#0077B8",
         "#F4640D",
         "#FAA200",
@@ -125,8 +124,7 @@ matplotlib.rcParams["axes.prop_cycle"] = cycler(
         "#F4E635",
         "#E37DAC",
         "#242424",
-    ]
-)
+    ])
 
 
 class ExportThread(QThread):
@@ -140,10 +138,6 @@ class ExportThread(QThread):
         for i in range(1, 21):
             self.sleep(3)
             self.exportThreadSignal.emit("i = %s" % i)
-
-
-import traceback
-
 
 class WorkerSignals(QObject):
     """
@@ -171,9 +165,9 @@ class WorkerSignals(QObject):
     progress = pyqtSignal(int)
 
 
-class Worker(QRunnable):
+class ExportWorker(QRunnable):
     """
-    Worker thread
+    Worker thread - runs data export in a separate thread
 
     Inherits from QRunnable to handler worker thread setup, signals and wrap-up.
 
@@ -186,7 +180,7 @@ class Worker(QRunnable):
     """
 
     def __init__(self, *args, **kwargs):
-        super(Worker, self).__init__()
+        super(ExportWorker, self).__init__()
 
         # Store constructor arguments (re-used for processing)
         # self.fn = fn
@@ -195,7 +189,7 @@ class Worker(QRunnable):
         self.signals = WorkerSignals()
 
         # Add the callback to our kwargs
-        self.kwargs["progress_callback"] = self.signals.progress
+        #self.kwargs["progress_callback"] = self.signals.progress
 
     @pyqtSlot()
     def run(self):
@@ -209,21 +203,35 @@ class Worker(QRunnable):
             # print(type(self.args),  self.args)
             # filename, xlsx, withReport, heatmaps, genpics, n_jobs
             moltenProtFitMultiple = self.args[0]
-            filename = self.args[1]
-            xlsx = self.args[2]
-            withReport = self.args[3]
-            heatmaps = self.args[4]
-            genpics = self.args[5]
-            n_jobs = self.args[6]
-            print("Run!", type(self.signals.progress))
-            moltenProtFitMultiple.WriteOutputAll(
-                outfolder=filename,
-                xlsx=xlsx,
-                report=withReport,
-                heatmaps=heatmaps,
-                genpics=genpics,
-                n_jobs=n_jobs,
-            )
+            #filename = self.args[1]
+            #xlsx = self.args[2]
+            # withReport = self.args[3]
+            #heatmaps = self.args[3]
+            #genpics = self.args[4]
+            #n_jobs = self.args[5]
+            #report_choice = self.args[6]
+            print("Running export thread", type(self.signals.progress))
+            moltenProtFitMultiple.WriteOutputAll(**self.kwargs)
+            # No report done, follow the heatmaps/xlsx/genfigs settings
+            '''
+            withReport = False
+            if report_choice == 2:
+                # HTML report
+                withReport = True
+            if report_choice == 1:
+                filename = os.path.join(filename, "Summary.xlsx")
+                # all filters and duplicate merging is skipped
+                moltenProtFitMultiple.CombineResults(filename, -1, -1, False)
+            else:
+                moltenProtFitMultiple.WriteOutputAll(
+                    outfolder=filename,
+                    xlsx=xlsx,
+                    report=withReport,
+                    heatmaps=heatmaps,
+                    genpics=genpics,
+                    n_jobs=n_jobs,
+                )
+            '''
             self.signals.progress.emit(1)
         except:
             traceback.print_exc()
@@ -404,9 +412,20 @@ class MoltenProtToolBox(QDialog):
             "toolbox/importSettingsPage/scanRateSpinBoxValue",
             self.ui.scanRateSpinBox.value(),
         )
+        
+        self.settings.setValue(
+            "toolbox/importSettingsPage/spectrumCsvCheckBox",
+            int(self.ui.spectrumCsvCheckBox.isChecked()),
+        )
+        
         self.settings.setValue(
             "toolbox/importSettingsPage/refoldingCheckBox",
             int(self.ui.refoldingCheckBox.isChecked()),
+        )
+        
+        self.settings.setValue(
+            "toolbox/importSettingsPage/rawCheckBox",
+            int(self.ui.rawCheckBox.isChecked()),
         )
 
         self.settings.setValue(
@@ -417,14 +436,14 @@ class MoltenProtToolBox(QDialog):
             "toolbox/exportSettingsPage/outputReportComboBoxIndex",
             self.ui.outputReportComboBox.currentIndex(),
         )
-        self.settings.setValue(
-            "toolbox/exportSettingsPage/genpicsCheckBox",
-            int(self.ui.genpicsCheckBox.isChecked()),
-        )
-        self.settings.setValue(
-            "toolbox/exportSettingsPage/heatmapCheckBox",
-            int(self.ui.heatmapCheckBox.isChecked()),
-        )
+        #self.settings.setValue(
+        #    "toolbox/exportSettingsPage/genpicsCheckBox",
+        #    int(self.ui.genpicsCheckBox.isChecked()),
+        #)
+        #self.settings.setValue(
+        #    "toolbox/exportSettingsPage/heatmapCheckBox",
+        #    int(self.ui.heatmapCheckBox.isChecked()),
+        #)
 
         self.settings.setValue(
             "toolbox/miscSettingsPage/parallelSpinBox", self.ui.parallelSpinBox.value()
@@ -446,11 +465,17 @@ class MoltenProtToolBox(QDialog):
             "toolbox/plotSettingsPage/curveDerivativeCheckBox",
             int(self.ui.curveDerivativeCheckBox.isChecked()),
         )
+        
+        self.settings.setValue("toolbox/plotSettingsPage/curveHeatmapColorCheckBox", int(self.ui.curveHeatmapColorCheckBox.isChecked()),)
+        
+        #self.settings.setValue(
+        #    "toolbox/plotSettingsPage/curveLegendCheckBox",
+        #    int(self.ui.curveLegendCheckBox.isChecked()),
+        #)
         self.settings.setValue(
-            "toolbox/plotSettingsPage/curveLegendCheckBox",
-            int(self.ui.curveLegendCheckBox.isChecked()),
+           "toolbox/plotSettingsPage/curveLegendComboBox",
+           self.ui.curveLegendComboBox.currentIndex(),
         )
-
         self.settings.setValue(
             "toolbox/plotSettingsPage/curveMarkEverySpinBoxValue",
             self.ui.curveMarkEverySpinBox.value(),
@@ -490,6 +515,15 @@ class MoltenProtToolBox(QDialog):
             self.settings.value("toolbox/importSettingsPage/refoldingCheckBox", 0)
         )
         self.ui.refoldingCheckBox.setChecked(isChecked)
+        isChecked = int(
+            self.settings.value("toolbox/importSettingsPage/rawCheckBox", 0)
+        )
+        self.ui.rawCheckBox.setChecked(isChecked)
+        isChecked = int(
+            self.settings.value("toolbox/importSettingsPage/spectrumCsvCheckBox", 0)
+        )
+        self.ui.spectrumCsvCheckBox.setChecked(isChecked)
+
 
         value = int(self.settings.value("toolbox/miscSettingsPage/parallelSpinBox", 1))
         self.ui.parallelSpinBox.setValue(value)
@@ -512,14 +546,14 @@ class MoltenProtToolBox(QDialog):
             )
         )
         self.ui.outputReportComboBox.setCurrentIndex(index)
-        isChecked = int(
-            self.settings.value("toolbox/exportSettingsPage/genpicsCheckBox", 0)
-        )
-        self.ui.genpicsCheckBox.setChecked(isChecked)
-        isChecked = int(
-            self.settings.value("toolbox/exportSettingsPage/heatmapCheckBox", 0)
-        )
-        self.ui.heatmapCheckBox.setChecked(isChecked)
+        #isChecked = int(
+        #    self.settings.value("toolbox/exportSettingsPage/genpicsCheckBox", 0)
+        #)
+        #self.ui.genpicsCheckBox.setChecked(isChecked)
+        #isChecked = int(
+        #    self.settings.value("toolbox/exportSettingsPage/heatmapCheckBox", 0)
+        #)
+        #self.ui.heatmapCheckBox.setChecked(isChecked)
 
         isChecked = int(
             self.settings.value("toolbox/plotSettingsPage/curveVlinesCheckBox", 0)
@@ -530,20 +564,30 @@ class MoltenProtToolBox(QDialog):
         )
         self.ui.curveBaselineCheckBox.setChecked(isChecked)
         isChecked = int(
+            self.settings.value("toolbox/plotSettingsPage/curveHeatmapColorCheckBox", 0)
+        )
+        self.ui.curveHeatmapColorCheckBox.setChecked(isChecked)
+
+        isChecked = int(
             self.settings.value("toolbox/plotSettingsPage/curveDerivativeCheckBox", 0)
         )
         self.ui.curveDerivativeCheckBox.setChecked(isChecked)
-        isChecked = int(
-            self.settings.value("toolbox/plotSettingsPage/curveLegendCheckBox", 0)
+        #isChecked = int(
+            #self.settings.value("toolbox/plotSettingsPage/curveLegendCheckBox", 0)
+        #)
+        #self.ui.curveLegendCheckBox.setChecked(isChecked)
+        index = int(
+            self.settings.value("toolbox/plotSettingsPage/curveLegendComboBox", 0)
         )
-        self.ui.curveLegendCheckBox.setChecked(isChecked)
+        self.ui.curveLegendComboBox.setCurrentIndex(index)
+        
         value = int(
             self.settings.value(
                 "toolbox/plotSettingsPage/curveMarkEverySpinBoxValue", 0
             )
         )
         self.ui.curveMarkEverySpinBox.setValue(value)
-
+        
         index = int(
             self.settings.value("toolbox/exportSettingsPage/curveTypeComboboxIndex", 0)
         )
@@ -557,18 +601,28 @@ class MoltenProtToolBox(QDialog):
         # print("resetToDefaults")
         index = 0  # int(self.settings.value('toolbox/importSettingsPage/denaturantComboBoxIndex',  0))
         self.ui.denaturantComboBox.setCurrentIndex(index)
+        
         text = core.defaults[
             "sep"
         ]  # self.settings.value('toolbox/importSettingsPage/separatorInputText',  ',')
         self.ui.separatorInput.setText(text)
+        
         text = core.defaults[
             "dec"
         ]  # self.settings.value('toolbox/importSettingsPage/decimalSeparatorInputText',  '.')
         self.ui.decimalSeparatorInput.setText(text)
+        
         value = 1.0  # float(self.settings.value('toolbox/importSettingsPage/scanRateSpinBoxValue',  1.0))
         self.ui.scanRateSpinBox.setValue(value)
+        
+        isChecked = 0
+        self.ui.spectrumCsvCheckBox.setChecked(isChecked)
+        
         isChecked = 0  # int(self.settings.value('toolbox/importSettingsPage/refoldingCheckBox',  0))
         self.ui.refoldingCheckBox.setChecked(isChecked)
+
+        isChecked = 0
+        self.ui.rawCheckBox.setChecked(isChecked)
 
         value = 1  # int(self.settings.value('toolbox/miscSettingsPage/parallelSpinBox',  1))
         self.ui.parallelSpinBox.setValue(value)
@@ -579,10 +633,10 @@ class MoltenProtToolBox(QDialog):
         self.ui.outputFormatComboBox.setCurrentIndex(index)
         index = 0  # int(self.settings.value('toolbox/exportSettingsPage/outputReportComboBoxIndex',  0))
         self.ui.outputReportComboBox.setCurrentIndex(index)
-        isChecked = 0  # int(self.settings.value('toolbox/exportSettingsPage/genpicsCheckBox',  0))
-        self.ui.genpicsCheckBox.setChecked(isChecked)
-        isChecked = 0  # int(self.settings.value('toolbox/exportSettingsPage/heatmapCheckBox',  0))
-        self.ui.heatmapCheckBox.setChecked(isChecked)
+        #isChecked = 0  # int(self.settings.value('toolbox/exportSettingsPage/genpicsCheckBox',  0))
+        #self.ui.genpicsCheckBox.setChecked(isChecked)
+        #isChecked = 0  # int(self.settings.value('toolbox/exportSettingsPage/heatmapCheckBox',  0))
+        #self.ui.heatmapCheckBox.setChecked(isChecked)
 
         isChecked = 0  # int(self.settings.value('toolbox/plotSettingsPage/curveVlinesCheckBox',  0))
         self.ui.curveVlinesCheckBox.setChecked(isChecked)
@@ -590,8 +644,13 @@ class MoltenProtToolBox(QDialog):
         self.ui.curveBaselineCheckBox.setChecked(isChecked)
         isChecked = 0  # int(self.settings.value('toolbox/plotSettingsPage/curveDerivativeCheckBox',  0))
         self.ui.curveDerivativeCheckBox.setChecked(isChecked)
-        isChecked = 0  # int(self.settings.value('toolbox/plotSettingsPage/curveLegendCheckBox',  0))
-        self.ui.curveLegendCheckBox.setChecked(isChecked)
+        #isChecked = 0  # int(self.settings.value('toolbox/plotSettingsPage/curveLegendCheckBox',  0))
+        #self.ui.curveLegendCheckBox.setChecked(isChecked)
+        isChecked = 0  
+        self.ui.curveHeatmapColorCheckBox.setChecked(isChecked)
+
+        index = 0 
+        self.ui.curveLegendComboBox.setCurrentIndex(index)
         value = 0  # int(self.settings.value('toolbox/plotSettingsPage/curveMarkEverySpinBoxValue',  0))
         self.ui.curveMarkEverySpinBox.setValue(value)
         if self.parent != None:
@@ -777,7 +836,6 @@ class AnalysisDialog(QDialog):
         self.setCheckBox(
             "analysisSettings/medianFilterCheckBox", self.ui.medianFilterCheckBox
         )
-        # print value, self.ui.medianFilterCheckBox.isChecked(),  cfFilename, currentframe().f_lineno
         value = self.settings.value("analysisSettings/medianFilterSpinBox", 5)
         value = int(value)
         self.ui.medianFilterSpinBox.setValue(value)
@@ -817,18 +875,15 @@ class AnalysisDialog(QDialog):
             self.ui.shrinkDoubleSpinBox.hide()
             self.ui.shrinkNewdTValueLabel.hide()
 
-
 ##  \brief This class implements QMainWindow of MoltenProt.
 #     \details
-
-
 class MoltenProtMainWindow(QMainWindow):
     NextId = 1
     Instances = set()
     ##  \brief MoltenProtMainWindow constructor.
     #     \details
     #   - Set analysis defaults. \sa setAnalysisDefaults
-    #   - Init class memebers.
+    #   - Init class members.
     #   - Parse application arguments. \sa parseArgs
     #   - Read settings.
     #   - Create standard GUI elements of QMainWindow for MoltenProt application and set their visibility. \sa createMainWindow createStatusBar initDialogs.
@@ -839,33 +894,33 @@ class MoltenProtMainWindow(QMainWindow):
 
         self.layout = None
         self.canvas = None
-        ## \brief  This member holds the filename of the data.
+        ## \brief  This attribute holds the filename of the data.
         self.filename = filename
         if self.filename == None:
             MoltenProtMainWindow.NextId += 1
 
         self.setAnalysisDefaults()
-        ## \brief  This member holds the instance of MoltenProtFit object. \sa core.MoltenProtFit
+        ## \brief  This attribute holds the instance of MoltenProtFit object. \sa core.MoltenProtFit
         self.moltenProtFit = None
-        ## \brief  This member holds the instance of MoltenProtFitMultiple object. \sa core.MoltenProtFitMultiple
+        ## \brief  This attribute holds the instance of MoltenProtFitMultiple object. \sa core.MoltenProtFitMultiple
         self.moltenProtFitMultiple = None
         # the initial state is that data is not processed
         self.dataProcessed = False
-        ## \brief  This member holds the instance of AxesDerivative object.
+        ## \brief  This attribute holds the instance of AxesDerivative object.
         #   \details AxesDerivative object depicts derevative data plot under the main plot and is created in addDerivativeSublot method.
         #   \sa addDerivativeSublot
         self.axesDerivative = None
         self.axesLegend = None
-        ## \brief  This member holds the instance of sortScoreCombBoxAction object.
-        #    \details This member is created in populateAndShowSortScoreComboBox method. \sa populateAndShowSortScoreComboBox
+        ## \brief  This attribute holds the instance of sortScoreCombBoxAction object.
+        #    \details This attribute is created in populateAndShowSortScoreComboBox method. \sa populateAndShowSortScoreComboBox
         self.sortScoreCombBoxAction = None
-        ## \brief This member holds user personal settings.
+        ## \brief This attribute holds user personal settings.
         #   \details At present moment this object holds last working directory. \sa lastDir
         self.settings = QSettings()
-        ## \brief  This member holds last working directory.
+        ## \brief  This attribute holds last working directory.
         self.lastDir = self.settings.value("settings/lastDir", ".")
         # print type(self.lastDir), self.lastDir, cfFilename, currentframe().f_lineno
-        ## \brief  This member holds the number of analysis runs.
+        ## \brief  This attribute holds the number of analysis runs.
         self.analysisRunsCounter = int(
             self.settings.value("settings/analysisRunsCounter", 0)
         )
@@ -875,30 +930,38 @@ class MoltenProtMainWindow(QMainWindow):
         )
 
         ## Plotting-related constants
-        ## \brief  This member controls the legend placement on the main plot.
-        self.legendLocation = "best"
+        ## \brief  This attribute controls the legend placement on the main plot.
+        self.legendLocation = "best" # legend is now in a separate axes, is this needed?
 
         self.setWindowTitle("MoltenProt Main Window")
+        
         # Set dimensions of experimental and layout data. Those dimensions are used in createButtonArray, editLayout methods.
-        ## \brief  This member sets the row dimension of the experimental and the layout data. \sa createButtonArray editLayout
+        ## \brief  This attribute sets the row dimension of the experimental and the layout data. \sa createButtonArray editLayout
         self.rowsCount = 8
-        ## \brief  This member sets the column dimension of the experimental and the layout data. \sa createButtonArray editLayout
+        ## \brief  This attribute sets the column dimension of the experimental and the layout data. \sa createButtonArray editLayout
         self.colsCount = 12
-        ## \brief This member holds the list of gray buttons
-        self.grayButtonsNames = []
-        ## \brief This member holds the name of edited layout file
+        # default button style
+        self.buttonStyleString = "QPushButton {  border-width: 2px; border-color: black; background-color: gray } QPushButton:checked { border-color: green; border-style: inset;}"
+        # default gray colour for buttons make part of HeatmapButton?
+        self.buttonGray = QColor.fromRgbF(0.501961, 0.501961, 0.501961, 1.000000)
+        
+        ## \brief This attribute holds the name of edited layout file
         # self.layoutFileName = None
-        ## \brief This member holds the instance of MoltenProtFit.hm_dic member. \sa core.MoltenProtFit.hm_dic
+        ## \brief This attribute holds the instance of MoltenProtFit.hm_dic attribute. \sa core.MoltenProtFit.hm_dic
         self.hm_dic = core.MoltenProtFit.hm_dic
-        ## \brief This member holds the name of default sort.
-        self.heatMapName = "Sort_score"
-        ## \brief This member holds the export as spreadsheet flag.
+        
+        # create cycler for colors and set the starting color
+        self.resetColorCycler()
+
+        ## \brief This attribute holds the name of default sort.
+        #self.heatMapName = "Sort_score"
+        ## \brief This attribute holds the export as spreadsheet flag.
         self.exportXlsx = False
-        ## \brief This member holds the name of default analysis.
+        ## \brief This attribute holds the name of default analysis.
         self.analysisMode = "santoro1988"
         self.n_jobs = 1
         self.parseArgs()
-        ## \brief This member holds the namelist of MoltenProt colormap names.
+        ## \brief This attribute holds the namelist of MoltenProt colormap names.
         self.colorMapNames = [
             "RdYlGn",
             "RdYlGn_r",
@@ -909,22 +972,19 @@ class MoltenProtMainWindow(QMainWindow):
             "plasma",
             "plasma_r",
         ]
-        ## \brief This member holds the current palette index.
+        ## \brief This attribute holds the current palette index.
         self.currentColorMapIndex = 0
-        ## \brief This member holds the current palette.
+        ## \brief This attribute holds the current palette.
         self.currentColorMap = self.colorMapNames[self.currentColorMapIndex]
         self.colorMapComboBoxAction = None
-        ## \brief  This member holds the buttons checked by user.
-        self.selectedItemsList = []
         self.createMainWindow()
         self.createStatusBar()
 
         self.initDialogs()
         # NOTE some dialogs must be visible only when a file is loaded
-        self.hideActions()
+        self.actionsSetVisible(False)
 
         self.setRunAnalysisCounterLabel()
-        self.on_show()
 
         self.threadpool = QThreadPool()
         print(
@@ -944,7 +1004,15 @@ class MoltenProtMainWindow(QMainWindow):
         self.exportThread.exportThreadSignal.connect(
             self.on_change, Qt.QueuedConnection
         )
+    
+    def resetColorCycler(self):
+        '''
+        Creates a fresh iterator through colors and sets the initial color
+        '''
+        self.curveColorCycler = colorsafe_cycler()
+        self.currentCurveColor = next(self.curveColorCycler)['color']
 
+    
     def on_started(self):  # called when thread is started
         if showVersionInformation:
             print("on_started")
@@ -966,11 +1034,10 @@ class MoltenProtMainWindow(QMainWindow):
         self.status_text.setText("Results exported!")
 
     ## \brief  This method sets the analysis data, which has been loaded from json file, to analysis options data in the Analysis Dialog.
-    ## \todo analysisModeComboBox has been deleted from GUI.
     def setAnalysisOptionsFromJSON(self):
         if self.moltenProtFit == None:
             print("self.moltenProtFit == None", cfFilename, currentframe().f_lineno)
-        else:
+        elif self.moltenProtFit.analysisHasBeenDone():
             # read the information from the MPFM instance
             (
                 analysis_settings,
@@ -1010,7 +1077,6 @@ class MoltenProtMainWindow(QMainWindow):
     def setDoubleSpinBoxAccording2CheckBox(
         self, analysisParameter, checkBox, doubleSpinBox
     ):
-        # print analysisParameter,  type(analysisParameter), cfFilename,  currentframe().f_lineno
         if analysisParameter == None:
             checkBox.setChecked(False)
             doubleSpinBox.hide()
@@ -1155,7 +1221,6 @@ class MoltenProtMainWindow(QMainWindow):
         # step 3: prepare the canvas
         self.axisClear()
         self.on_deselectAll()
-        # self.moltenProtToolBox.ui.curveLegendCheckBox.setChecked(False)
         self.canvas.draw()
 
         # step 4: run analysis
@@ -1182,9 +1247,6 @@ class MoltenProtMainWindow(QMainWindow):
 
         # actions done only if analysis was successful
         if self.dataProcessed:
-            # reset the list of grayed-out buttons (might change after re-analysis)
-            self.grayButtonsNames = []
-
             self.mainWindow.protocolPlainTextEdit.setPlainText(
                 self.moltenProtFit.protocolString
             )
@@ -1245,9 +1307,10 @@ class MoltenProtMainWindow(QMainWindow):
 
     def createPlotSettings(self):
         self.curveVlinesCheckBoxIsChecked = None
+        self.curveHeatmapColorCheckBoxIsChecked = None
         self.curveBaselineCheckBoxIsChecked = None
         self.curveDerivativeCheckBoxIsChecked = None
-        self.curveLegendCheckBoxIsChecked = None
+        self.curveLegendComboboxCurrentText = None
         self.curveMarkEverySpinBoxValue = None
         self.curveTypeComboboxCurrentText = None
         self.curveViewComboboxCurrentText = None
@@ -1261,8 +1324,12 @@ class MoltenProtMainWindow(QMainWindow):
         self.moltenProtToolBox.ui.curveBaselineCheckBox.clicked.connect(
             self.getPlotSettings
         )
+        self.moltenProtToolBox.ui.curveHeatmapColorCheckBox.clicked.connect(
+            self.getPlotSettings
+        )
+
         # legend and derivative subplots require dedicated methods
-        self.moltenProtToolBox.ui.curveLegendCheckBox.clicked.connect(
+        self.moltenProtToolBox.ui.curveLegendComboBox.currentIndexChanged.connect(
             self.manageSubplots
         )
         # self.moltenProtToolBox.ui.curveDerivativeCheckBox.clicked.connect(self.getPlotSettings)
@@ -1306,6 +1373,7 @@ class MoltenProtMainWindow(QMainWindow):
 
     ## \brief This method gets Plot tab in Settings dialog data from its GUI elements.
     def getPlotSettings(self):
+        self.curveHeatmapColorCheckBoxIsChecked = self.moltenProtToolBox.ui.curveHeatmapColorCheckBox.isChecked()
         self.curveVlinesCheckBoxIsChecked = (
             self.moltenProtToolBox.ui.curveVlinesCheckBox.isChecked()
         )
@@ -1315,8 +1383,8 @@ class MoltenProtMainWindow(QMainWindow):
         self.curveDerivativeCheckBoxIsChecked = (
             self.moltenProtToolBox.ui.curveDerivativeCheckBox.isChecked()
         )
-        self.curveLegendCheckBoxIsChecked = (
-            self.moltenProtToolBox.ui.curveLegendCheckBox.isChecked()
+        self.curveLegendComboboxCurrentText = (
+            self.moltenProtToolBox.ui.curveLegendComboBox.currentText()
         )
         self.curveMarkEverySpinBoxValue = (
             self.moltenProtToolBox.ui.curveMarkEverySpinBox.value()
@@ -1401,11 +1469,12 @@ class MoltenProtMainWindow(QMainWindow):
         self.decValue = "."
         self.exclude = []
         self.blanks = []
-        # print self.sepValue, self.decValue, self.exclude, self.blanks,  self.exclude
 
     @pyqtSlot()
     def on_exportResults(self):
-        # print "exportResults"
+        '''
+        Actions performed when the export data button is clicked
+        '''
         dlg = QFileDialog()
         dlg.setFileMode(QFileDialog.Directory)
         filenames = None
@@ -1413,57 +1482,68 @@ class MoltenProtMainWindow(QMainWindow):
         if dlg.exec_():
             filenames = dlg.selectedFiles()
             filename = filenames[0]
-            xlsx = self.moltenProtToolBox.ui.outputFormatComboBox.currentIndex() == 1
-            genpics = self.moltenProtToolBox.ui.genpicsCheckBox.isChecked()
+            # get export settings from the ui elements and convert them into kwargs for MP.WriteOutput
+            data_out = self.moltenProtToolBox.ui.outputFormatComboBox.currentIndex()
+            report_out = self.moltenProtToolBox.ui.outputReportComboBox.currentIndex()
+            
+            out_kwargs = {}
+            out_kwargs['outfolder'] = filename
+            
+            if data_out == 0:
+                # 0 no data output
+                # 1 CSV output
+                # 2 XLSX output
+                out_kwargs['no_data'] = True
+            elif data_out == 1:
+                out_kwargs['xlsx'] = False
+            elif data_out == 2:
+                out_kwargs['xlsx'] = True
+            
+            if report_out == 0:
+                # 0 no report
+                # 1 pdf
+                # 2 XLSX summary
+                # HTML
+                out_kwargs['report_format'] = None
+            elif report_out == 1:
+                out_kwargs['report_format'] = 'pdf'
+            elif report_out == 2:
+                out_kwargs['report_format'] = 'xlsx'
+            elif report_out == 3:
+                out_kwargs['report_format'] = 'html'
+            
+            #xlsx = self.moltenProtToolBox.ui.outputFormatComboBox.currentIndex() == 1
+            #genpics = self.moltenProtToolBox.ui.genpicsCheckBox.isChecked()
 
-            if self.moltenProtToolBox.ui.heatmapCheckBox.isChecked():
-                heatmaps = ["all"]
-            else:
-                heatmaps = []
+            #if self.moltenProtToolBox.ui.heatmapCheckBox.isChecked():
+            #    heatmaps = ["all"]
+            #else:
+            #    heatmaps = []
 
             # which report to generate: index 0 is full report, index 1 is just a summary file
-            report_choice = (
-                self.moltenProtToolBox.ui.outputReportComboBox.currentIndex()
-            )
+            #report_choice = (
+            #    self.moltenProtToolBox.ui.outputReportComboBox.currentIndex()
+            #)
 
-            # TODO read allowed number of parallel processes from ui.ParallelSpinBox and
-            # pass it as n_jobs argument to WriteOutput method
-            n_jobs = self.moltenProtToolBox.ui.parallelSpinBox.value()
+            out_kwargs['n_jobs'] = self.moltenProtToolBox.ui.parallelSpinBox.value()
 
             QApplication.setOverrideCursor(Qt.WaitCursor)
-
-            if report_choice == 0 or report_choice == 2:
-                # No report done, follow the heatmaps/xlsx/genfigs settings
-                withReport = False
-                if report_choice == 2:
-                    # HTML report
-                    withReport = True
-                worker = Worker(
-                    self.moltenProtFitMultiple,
-                    filename,
-                    xlsx,
-                    withReport,
-                    heatmaps,
-                    genpics,
-                    n_jobs,
-                )  # Any other args, kwargs are passed to the run function
-                # worker.signals.result.connect(self.print_output)
-                worker.signals.finished.connect(self.threadComplete)
-                worker.signals.progress.connect(self.progressFn)
-                self.threadIsWorking = True
-                # Execute
-                self.threadpool.start(worker)
-            elif report_choice == 1:
-                filename = os.path.join(filename, "Summary.xlsx")
-                # all filters and duplicate merging is skipped
-                self.moltenProtFitMultiple.CombineResults(filename, -1, -1, False)
-                # self.createExportThread()
-                # self.exportThread.start()
-            else:
-                print(
-                    "Unknown report choice ",
-                    self.moltenProtToolBox.ui.outputReportComboBox.currentText(),
-                )
+            worker = ExportWorker(
+                self.moltenProtFitMultiple,
+                #filename,
+                #xlsx,
+                #heatmaps,
+                #genpics,
+                #n_jobs,
+                #report_choice
+                **out_kwargs
+            )  # Any other args, kwargs are passed to the run function
+            # worker.signals.result.connect(self.print_output)
+            worker.signals.finished.connect(self.threadComplete)
+            worker.signals.progress.connect(self.progressFn)
+            self.threadIsWorking = True
+            # Execute
+            self.threadpool.start(worker)
             self.status_text.setText(
                 "Results are being exported to folder {}".format(filename)
             )
@@ -1488,7 +1568,6 @@ class MoltenProtMainWindow(QMainWindow):
     def on_actionFontTriggered(self):
         fontDialog = QFontDialog(self)
         fontDialog.setFont(self.font)
-        # font, ok = QFontDialog.getFont()
         font, ok = fontDialog.getFont()
         if ok:
             self.font = font
@@ -1540,7 +1619,7 @@ class MoltenProtMainWindow(QMainWindow):
             self,
             "About MoltenProt",
             """<b>MoltenProt</b> v. %s
-        <p>Copyright &copy; 2018, 2019, 2020 Vadim Kotov, Thomas C. Marlovits
+        <p>Copyright &copy; 2018-2021 Vadim Kotov, Thomas C. Marlovits
         <p>A robust toolkit for assessment and optimization of protein (thermo)stability.
         <p>Python %s - PyQt5 %s - Matplotlib %s on %s"""
             % (
@@ -1558,15 +1637,19 @@ class MoltenProtMainWindow(QMainWindow):
         QMessageBox.about(
             self,
             "Cite MoltenProt",
-            """<p>If you found MoltenProt helpful in your work, please cite: </p> 
-            <p>Kotov et al., Protein Science (2021)</p>
-         <p><a href="https://dx.doi.org/10.1002/pro.3986">doi: 10.1002/pro.3986</a></p>""",
+            core.citation['html'],
         )
 
     ## \brief This SLOT is called when user clicks <b>Help</b> menu item and shows the MoltenProt help system main window.
     @pyqtSlot()
     def on_actionHelp(self):
         self.helpDialog.show()
+
+    ## \brief This SLOT is called when user clicks File>Load sample data
+    @pyqtSlot()
+    def on_actionLoad_sample_data(self):
+        # opens the folder where demo data is stored
+        self.on_loadFile(directory=os.path.join(core.__location__, 'demo_data'))
 
     ## \brief Save the current case as JSON.
     @pyqtSlot()
@@ -1594,7 +1677,6 @@ class MoltenProtMainWindow(QMainWindow):
         analysisModeComboBoxItemsList = list(core.avail_models.keys())
 
         if data is None:
-            # print (core.avail_models.keys(), cfFilename, currentframe().f_lineno )
             # analysisModeComboBoxItemsList = list( core.avail_models.keys() )
             # analysisModeComboBoxItemsList.append('skip') # skip is now a "model", too
             defaultModel = analysisModeComboBoxItemsList[0]
@@ -1602,7 +1684,6 @@ class MoltenProtMainWindow(QMainWindow):
             # self.analysisDialog.ui.analysisModeComboBox.insertItems(1,  analysisModeComboBoxItemsList)
 
             currentDataSetsList = list(self.moltenProtFitMultiple.GetDatasets())
-            # print(currentDataSetsList, len(currentDataSetsList), type(currentDataSetsList), cfFilename, currentframe().f_lineno )
             data = pd.DataFrame(columns=("Dataset", "Model"))
             for i in range(len(currentDataSetsList)):
                 data.loc[i] = [currentDataSetsList[i], defaultModel]
@@ -1620,12 +1701,21 @@ class MoltenProtMainWindow(QMainWindow):
 
     ## \brief Load the input data in xlsx, JSON or csv format for analysis.
     @pyqtSlot()
-    def on_loadFile(self, filename=None):
+    def on_loadFile(self, directory=None):
+        '''
+        Parameters
+        ----------
+        directory
+            a folder where to open the file dialog
+        '''
+        if directory is None:
+            directory = self.lastDir
+        
         self.on_deselectAll()
         filename = QFileDialog.getOpenFileName(
             # self,
             caption=self.tr("Open JSON session or import data"),
-            directory=self.lastDir,
+            directory=directory,
             filter="XLSX Files (*.xlsx);;JSON Files (*.json);;CSV files (*.csv)",
         )
         # returns a tuple with file path, and the mode of QFileDialog used (XLSX Files, JSON Files, etc)
@@ -1635,21 +1725,10 @@ class MoltenProtMainWindow(QMainWindow):
             self.lastDir = fileInfo.canonicalPath()
             self.settings.setValue("settings/lastDir", self.lastDir)
             self.settings.sync()
-            self.grayButtonsNames = []
-            self.firstPlot = True
-            self.filetypeIsCsv = False
-            self.filetypeIsJson = False
-            self.filetypeIsXlsx = False
             self.resetButtons()
-            if self.sortScoreCombBoxAction != None:
+            if self.sortScoreCombBoxAction != None:# TODO is this really needed here?
                 self.sortScoreCombBoxAction.setVisible(False)
             self.dataProcessed = False
-            if filename.endswith(".csv"):
-                self.filetypeIsCsv = True
-            if filename.endswith(".json"):
-                self.filetypeIsJson = True
-            if filename.endswith(".xlsx"):
-                self.filetypeIsXlsx = True
 
             if self.fileLoaded == False:
                 # print("self.createMatplotlibContextMenu() has been commented.")
@@ -1661,14 +1740,12 @@ class MoltenProtMainWindow(QMainWindow):
                 self.mainWindow.actionExport.setVisible(False)
             QApplication.setOverrideCursor(Qt.WaitCursor)
             try:
-                if self.filetypeIsCsv:
+                if filename.endswith(".csv"):
                     self.processCsv(filename)
-                else:
-                    if self.filetypeIsXlsx:
-                        self.processXLSX(filename)
-                    else:
-                        if self.filetypeIsJson:
-                            self.processJSON(filename)
+                elif filename.endswith(".json"):
+                    self.processJSON(filename)
+                elif filename.endswith(".xlsx"):
+                    self.processXLSX(filename)
                 self.status_text.setText("Loaded " + filename)
                 self.fileLoaded = True
             except ValueError as e:
@@ -1683,35 +1760,29 @@ class MoltenProtMainWindow(QMainWindow):
             QApplication.restoreOverrideCursor()
             # done only when opening succeeded
             if self.fileLoaded:
-                self.mainWindow.actionSave_as_JSON.setVisible(True)
-                self.mainWindow.actionAnalysis.setVisible(True)
-                self.mainWindow.actionEdit_layout.setVisible(True)
-                self.mainWindow.actionToolBar.setVisible(True)
-                self.mainWindow.actionToolBar.setEnabled(True)
-                self.box = self.axes.get_position()
-                self.mainWindow.actionAnalysis.setEnabled(True)
-                self.showHideSelectDeselectAll(False)
-                self.enableButtons()
+                self.actionsSetVisible(True)
+                
+                self.setAllButtons('enable', True)
                 self.showOnlyValidButtons()
                 self.prepareAnalysisTableView()
 
                 # Overwrite default analysis settings if input file was JSON and was processed
                 # for any other file type reset to defaults
-                if self.filetypeIsJson:
+                if filename.endswith(".json"):
                     self.setAnalysisOptionsFromJSON()
                 else:
                     ###TODO restore default analysis settings
                     pass
 
                 # actions in case the data was processed (JSON only)
-                if self.moltenProtFit.analysisHasBeenDone():
+                if self.dataProcessed:
                     if showVersionInformation:
                         print(
                             "Analysis has been done",
                             cfFilename,
                             currentframe().f_lineno,
                         )
-                    self.showHideSelectDeselectAll(True)
+                    #self.showHideSelectDeselectAll(True)
                     self.moltenProtToolBox.ui.colormapForPlotComboBox.show()
                     self.moltenProtToolBox.ui.colormapForPlotLabel.show()
                     self.populateAndShowSortScoreComboBox()
@@ -1753,10 +1824,15 @@ class MoltenProtMainWindow(QMainWindow):
         self.sepValue = self.moltenProtToolBox.ui.separatorInput.text()
         self.decValue = self.moltenProtToolBox.ui.decimalSeparatorInput.text()
         self.scanRateValue = self.moltenProtToolBox.ui.scanRateSpinBox.value()
-
-        self.moltenProtFitMultiple = core.parse_plain_csv(
-            filename, sep=self.sepValue, dec=self.decValue, scan_rate=self.scanRateValue
-        )
+        
+        if self.moltenProtToolBox.ui.spectrumCsvCheckBox.isChecked():
+            self.moltenProtFitMultiple = core.parse_spectrum_csv(
+                filename, sep=self.sepValue, dec=self.decValue, scan_rate=self.scanRateValue
+            )
+        else:
+            self.moltenProtFitMultiple = core.parse_plain_csv(
+                filename, sep=self.sepValue, dec=self.decValue, scan_rate=self.scanRateValue
+            )
         available_datasets = self.moltenProtFitMultiple.GetDatasets()
         self.moltenProtFit = self.moltenProtFitMultiple.datasets[available_datasets[0]]
         self.populateDatasetComboBox(available_datasets)
@@ -1807,7 +1883,8 @@ class MoltenProtMainWindow(QMainWindow):
     #   \todo Debug print is used here.
     def processXLSX(self, filename):
         refolding = self.moltenProtToolBox.ui.refoldingCheckBox.isChecked()
-        self.moltenProtFitMultiple = core.parse_prom_xlsx(filename, refolding)
+        is_raw = self.moltenProtToolBox.ui.rawCheckBox.isChecked()
+        self.moltenProtFitMultiple = core.parse_prom_xlsx(filename, raw=is_raw, refold=refolding)
         available_datasets = self.moltenProtFitMultiple.GetDatasets()
         self.moltenProtFit = self.moltenProtFitMultiple.datasets[available_datasets[0]]
         # MPF2 dynamically populate heatmap combobox
@@ -1869,7 +1946,7 @@ class MoltenProtMainWindow(QMainWindow):
         retval = msg.exec_()
         """
         msg.exec_()
-
+        
     def __layout2widget(self, input_series):
         """
         Helper function to convert a single row of layout DataFrame into
@@ -1894,7 +1971,6 @@ class MoltenProtMainWindow(QMainWindow):
     ## \brief This method shows the layout from MoltenProtFitMultiple.layout in QTableWidget in LayoutDialog.
     #   \sa LayoutDialog
     def editLayout(self):
-        # print 'Enter editLayout',  currentframe().f_lineno,  cfFilename
         layout = self.moltenProtFitMultiple.layout.fillna("None")
         layout.apply(self.__layout2widget, axis=1)
         self.layoutDialog.ui.tableWidget.resizeColumnsToContents()
@@ -1957,6 +2033,14 @@ class MoltenProtMainWindow(QMainWindow):
         # apply edited layout to all datasets inside MPFM
         self.moltenProtFitMultiple.UpdateLayout()
 
+    def resetLayout(self):
+        '''
+        Action to be performed when reset button in Layout dialog is pressed.
+        Restore the original layout from layout_raw if this is available
+        '''
+        self.moltenProtFitMultiple.ResetLayout()
+        self.layoutDialog.close()
+        
     ## \brief This SLOT (in Qt terms) is called when user changes heatmap table name.
     #   \sa createComboBoxesForActionToolBar
     @pyqtSlot()
@@ -1990,67 +2074,179 @@ class MoltenProtMainWindow(QMainWindow):
             if showVersionInformation:
                 print("self.moltenProtFit == None", currentframe().f_lineno, cfFilename)
 
+    def __genTooltip(self, input_series, heatMapName):
+        '''
+        Helper function that converts a single row of MPF.plate_results to a tooltip string
+        '''
+        
+        output = "{} {} {} = {}".format(
+                    input_series.name,
+                    input_series.Condition,
+                    heatMapName,
+                    round(
+                        input_series[heatMapName],
+                        2,
+                    ),
+                )
+        return output
+    
     def setButtonsStyleAccordingToNormalizedData(self):
         if self.moltenProtFit != None:
-            self.heatMapName = self.sortScoreComboBox.currentText()
-            heatmaps = [self.heatMapName]
+            heatMapName = self.sortScoreComboBox.currentText()
             # NOTE during startup the values of the drop-down list
             # can be empty which would result in a crash
-            if heatmaps[0] in self.moltenProtFit.getResultsColumns():
-                self.normalizedData = self.moltenProtFit.converter96(heatmaps[0]) * 255
-                self.setButtonsStyle()
+            if heatMapName in self.moltenProtFit.getResultsColumns():
+                # normalize the data in selected column and create colors (rgba tuples) with the current colormap
+                cmap = cm.get_cmap(self.currentColorMap)
+                button_colors = core.normalize(self.moltenProtFit.plate_results[heatMapName]).apply(cmap)
+                # update the Color column in the Buttons df with existing colors
+                # NOTE buttons without a color will have None
+                button_colors.name = 'Color'
+                self.buttons.Color = None # resets all colors to None
+                self.buttons.update(button_colors)
+                
+                # generate tooltips 
+                self.buttons.Tooltip = None # reset all tooltips
+                tooltips = self.moltenProtFit.plate_results.apply(self.__genTooltip, heatMapName=heatMapName, axis=1)
+                tooltips.name = 'Tooltip'
+                self.buttons.update(tooltips)
+                
+                # apply changes to the buttons
+                self.buttons.apply(self.__setOneButtonStyle, axis=1)
         else:
             print("self.moltenProtFit == None", currentframe().f_lineno, cfFilename)
 
-    def checkAllButtons(self, checkFlag):
-        for j in range(self.colsCount):
-            for i in range(self.rowsCount):
-                # do not check gray buttons
-                color = self.btn2DArray[i][j].palette().color(QPalette.Window)
-                if color != self.gray:
-                    self.btn2DArray[i][j].setChecked(checkFlag)
-
-    def buttonChecked(self):
-        bret = False
-        for j in range(self.colsCount):
-            for i in range(self.rowsCount):
-                if self.btn2DArray[i][j].isChecked():
-                    bret = True
-                    break
-        return bret
-
+    def setAllButtons(self, action, flag):
+        '''
+        Applies a certain boolean action to all buttons in self.buttons
+        
+        Possible actions:
+        check - whether the button was clicked or not
+        enable - whether the button is enabled
+        
+        flag (bool) - true or false for action
+        
+        '''
+        for button_id in core.alphanumeric_index:
+            if action == 'check':
+                # TODO add skipping of gray buttons
+                self.buttons.at[button_id, 'Button'].setChecked(flag)
+            elif action == 'enable':
+                self.buttons.at[button_id, 'Button'].setEnabled(flag)
+            else:
+                raise ValueError("Unknown action: {}".format(action))
+        
+    def resetButtons(self):
+        for button_id in core.alphanumeric_index:            
+            self.buttons.at[button_id, 'Button'].setStyleSheet(self.buttonStyleString)
+    
     @pyqtSlot()
     def on_selectAll(self):
-        # print "selectAll"
-        self.checkAllButtons(True)
+        '''
+        Cycles through all buttons, checks valid buttons and updates plots and table
+        '''
         QApplication.setOverrideCursor(Qt.WaitCursor)
-        self.on_show()
+        for button_id in self.buttons.index:
+            if self.moltenProtFit.testWellID(button_id):
+                self.buttons.at[button_id, 'Button'].setChecked(True)
+                self.updateTable(button_id)
+                self.plotFigAny(button_id)
+                self.currentCurveColor = next(self.curveColorCycler)['color']
+        # re-initialize colors
+        self.resetColorCycler()
+        self.canvas.draw()
         QApplication.restoreOverrideCursor()
 
     @pyqtSlot()
     def on_deselectAll(self):
-        self.mainWindow.protocolPlainTextEdit.setPlainText("")
-        self.checkAllButtons(False)
-        self.selectedItemsList = []
-        self.tableWidget.clearContents()
-        self.tableWidget.setRowCount(0)
-        self.on_show()
+        # clear axes
+        self.axisClear()
+        self.setAllButtons('check', False)
+        self.resetTable()
+        for button_id in core.alphanumeric_index:
+            # NOTE draw_canvas=False makes the removal faster
+            self.removeButtonLine2D(button_id, draw_canvas=False)
+        # re-initialize colors
+        self.resetColorCycler()
+        self.canvas.draw()
 
     @pyqtSlot()
-    def on_show(self):
-        self.selectedItemsList = []
+    def on_show(self, button_id):
+        '''
+        The main action on button click
+        This method is also called:
+        1) when GUI is initialized
+        2) when all buttons are selected/deselected
+        
+        checks for the validity of the button id are in respective methods (plotfig and updateTable)
+        
+        if button clicked
+            upd table
+            plot the curve
+        else -> button unclicked
+            remove plotted curve
+            remove table entry
+        
+        Parameters
+        ----------
+        button_id
+            alphanumeric code (e.g. A1) of the button that was clicked
+        
+        Known issues
+        ------------
+        * if a button that was already clicked is unclicked, the color cycle doesn't go back. This means that upon unclicking the color used in the line of the unclicked button will not become the current color. Visually, it is somewhat inconsistent, however, one would need to somehow track the previous color and check if the button was previously clicked or not. For instance, one can keep two copies of curve cyclers, where one is one step ahead of the other
+        '''
+        btn = self.buttons.at[button_id, 'Button']
+        if btn.isChecked():
+            self.updateTable(button_id)
+            # line has already been already plotted by the hover function, but need to change the color for plotting
+            self.currentCurveColor = next(self.curveColorCycler)['color']
+        else:
+            self.removeButtonLine2D(button_id)
+            # remove respective entry from the table - scan all rows of the first column to find the button_id
+            for row in range(self.tableWidget.rowCount()):
+                # id in the table
+                item = self.tableWidget.item(row, 0)
+                if item is not None:
+                    table_id = self.tableWidget.item(row, 0).text()
+                    if table_id == button_id:
+                        self.tableWidget.removeRow(row)
+                        # only one table_id should exist, stop the cycle when found
+                        break
+        self.canvas.draw()
+    
+    def removeButtonLine2D(self, button_id, draw_canvas=True):
+        '''
+        Removes lines associated with a button
+        '''
+        lines = self.buttons.at[button_id, 'Line2D']
+        if lines is not np.nan:
+            for line in lines:
+                line.remove()
+            self.buttons.at[button_id, 'Line2D'] = np.nan # deregisters the line list
+        if draw_canvas:
+            # NOTE this updates the plot and may be a slow step
+            # if this step is omitted then the changes to the plot will not be updated on the screen
+            self.canvas.draw()
+    
+    def resetTable(self):
+        '''
+        Cleans, but does not hide the table widget
+        '''
         self.tableWidget.clearContents()
         self.tableWidget.setRowCount(0)
-        self.axes.clear()
-        self.axes.grid(True)
-        if self.axesDerivative != None:
-            self.axesDerivative.clear()
-            self.axesDerivative.grid(True)
-        else:
-            # print "self.axesDerivative == None", cfFilename,  currentframe().f_lineno
-            pass
+
+        
+    def updateTable(self, button_id):
+        '''
+        Reads information from self.moltenProtFit and creates a table under the heatmap
+        
+        Notes
+        -----
+        * Table widget will be made visible when the method is called for the first time
+        '''
+        
         if self.dataProcessed:
-            # print "Data processed", cfFilename,  currentframe().f_lineno
             plateResults = self.moltenProtFit.plate_results
             # create a dictionary to map column ID's in GUI to column names from getResultsColumns
             column_labels = ["ID", "Condition"] + self.moltenProtFit.getResultsColumns()
@@ -2059,226 +2255,186 @@ class MoltenProtMainWindow(QMainWindow):
                 column_dict[i] = column_labels[i]
             # set the number of columns in the table
             self.tableWidget.setColumnCount(len(column_dict))
-            # columns for plotting:
-            for column in range(self.colsCount):
-                for row in range(self.rowsCount):
-                    if self.btn2DArray[row][column].isChecked():
-                        for wellID in self.moltenProtFit.plate.columns.values:
-                            if wellID == self.btn2DArray[row][column].text():
-                                if wellID not in self.selectedItemsList:
-                                    # print self.tableWidget.isVisible(), cfFilename,  currentframe().f_lineno
-                                    if self.tableWidget.isVisible() == False:
-                                        self.showTable()
-                                    rowPosition = self.tableWidget.rowCount()
-                                    self.tableWidget.insertRow(rowPosition)
+            
+            if self.tableWidget.isVisible() == False:
+                self.tableWidget.show()
+                self.tableDockWidget.show()
 
-                                    for column_pos, column_name in column_dict.items():
-                                        if column_name == "ID":
-                                            table_string = wellID
-                                        elif column_name == "Condition":
-                                            table_string = plateResults.loc[
-                                                wellID, column_name
-                                            ]
-                                            if table_string is np.nan:
-                                                # NOTE prevents QTableWidgetItem Overflow error
-                                                table_string = "n/a"
-                                            else:
-                                                table_string = str(table_string)
-                                        elif column_name == "S":
-                                            # NOTE for S formatting to two last decimals is not always working
-                                            table_string = str(
-                                                plateResults.loc[wellID, column_name]
-                                            )
-                                        else:
-                                            table_string = "{:10.2f}".format(
-                                                plateResults.loc[wellID, column_name]
-                                            )
-                                        item = QTableWidgetItem(table_string)
-                                        item.setTextAlignment(Qt.AlignCenter)
-                                        self.tableWidget.setItem(
-                                            rowPosition, column_pos, item
-                                        )
-                                    self.selectedItemsList.append(wellID)
-                                    # set table widget titles accordingly
-                                    self.tableWidget.setHorizontalHeaderLabels(
-                                        column_labels
-                                    )
-                                if wellID not in self.grayButtonsNames:
-                                    self.plotFigAny(wellID)
-        elif self.moltenProtFit is not None:
-            for column in range(self.colsCount):
-                for row in range(self.rowsCount):
-                    if self.btn2DArray[row][column].isChecked():
-                        for wellID in self.moltenProtFit.plate.columns.values:
-                            if wellID == self.btn2DArray[row][column].text():
-                                self.plotFigAny(wellID)
-        self.canvas.draw()
+            # temporarily disable sorting to allow proper insertion of new rows (see QTableWidget docs)
+            self.tableWidget.setSortingEnabled(False)
+            
+            rowPosition = self.tableWidget.rowCount()
+            self.tableWidget.insertRow(rowPosition)
+            for column_pos, column_name in column_dict.items():
+                if column_name == "ID":
+                    table_string = button_id
+                elif column_name == "Condition":
+                    table_string = plateResults.loc[
+                        button_id, column_name
+                    ]
+                    if table_string is np.nan:
+                        # NOTE prevents QTableWidgetItem Overflow error
+                        table_string = "n/a"
+                    else:
+                        table_string = str(table_string)
+                elif column_name == "S":
+                    # NOTE for S formatting to two last decimals is not always working
+                    table_string = str(
+                        plateResults.loc[button_id, column_name]
+                    )
+                else:
+                    table_string = "{:10.2f}".format(
+                        plateResults.loc[button_id, column_name]
+                    )
+                item = QTableWidgetItem(table_string)
+                item.setTextAlignment(Qt.AlignCenter)
+                self.tableWidget.setItem(
+                    rowPosition, column_pos, item
+                )
+            # set table widget titles accordingly
+            self.tableWidget.setHorizontalHeaderLabels(
+                column_labels
+            )
+            # restore sorting functionality
+            self.tableWidget.setSortingEnabled(True)
+        else:
+            # TODO can use this section to show sample information before analysis
+            #print("Warning: cannot create table because data is not processed")
+            pass
 
-    def showTable(self):
-        self.tableWidget.show()
-        self.tableDockWidget.show()
-
-    def axisClear(self):
+    def axisClear(self, draw_canvas=True):
+        '''
+        Clears all available axes.
+        
+        Parameters
+        ----------
+        draw_canvas: bool
+            force redraw of the plot window
+            
+        Notes
+        -----
+        This is not equivalent to self.fig.clear, which would remove everything from the plot window
+        '''
+        # NOTE the very last ax is reserved for legend and nothing should be cleared here
         self.axes.clear()
         self.axes.grid(True)
         if self.axesDerivative != None:
             self.axesDerivative.clear()
             self.axesDerivative.grid(True)
-        self.canvas.draw()
-
-    ## \brief Get colors from current palette.
-    #   \details cm.datad holds all matplotlib colormap names.
-    def getQColor(self, index):
-        # self.colormap = cm.get_cmap(self.colormapNames[0],  96)
-        self.colormap = cm.get_cmap(self.currentColorMap)
-        red = self.colormap(index)[0]
-        green = self.colormap(index)[1]
-        blue = self.colormap(index)[2]
-        alpha = self.colormap(index)[3]
-        qcolor = QColor()
-        qcolor.setRedF(red)
-        qcolor.setGreenF(green)
-        qcolor.setBlueF(blue)
-        qcolor.setAlphaF(alpha)
-        return qcolor
-
-    def setButtonsStyle(self):
-        plateResults = self.moltenProtFit.plate_results
-        for i in range(self.rowsCount):
-            for j in range(self.colsCount):
-                index = int(self.normalizedData.iat[i, j])
-                if index < 256:
-                    qcolor = self.getQColor(index)
-                    styleString = (
-                        "QPushButton {  border-width: 2px; border-color: white; background-color: rgb(%s, %s, %s) } "
-                        % (qcolor.red(), qcolor.green(), qcolor.blue())
-                        + " QPushButton:checked { border-color:  black; border-style: inset;}"
+        if draw_canvas:
+            self.canvas.draw()
+    
+    def __setOneButtonStyle(self, input_series):
+        '''
+        Helper function that applies a color and state to one button
+        To be used in setButtonsStyle/setButtonsStyleAccordingToNormalizedData
+        '''
+        button = input_series['Button']
+        color = input_series['Color']
+        tooltip = input_series['Tooltip']
+        if color is not None:
+            styleString = (
+                        "QPushButton {  border-width: 2px; border-color: white; background-color: " + matplotlib.colors.to_hex(color, keep_alpha=False) + "} QPushButton:checked { border-color:  black; border-style: inset;}"
                     )
-                    enabled = True
-                else:
-                    styleString = "QPushButton {  border-width: 2px; border-color: white; background-color: gray } QPushButton:checked { border-color:  black; border-style: inset;}"
-                    enabled = False
-                self.btn2DArray[i][j].setEnabled(enabled)
-                self.btn2DArray[i][j].setStyleSheet(styleString)
-                id = self.btn2DArray[i][j].text()
-                color = self.btn2DArray[i][j].palette().color(QPalette.Window)
-                if color == self.gray:
-                    self.grayButtonsNames.append(id)
-                else:
-                    # show the values from the currently selected heatmap
-                    # round up to 2 decimal digits
-                    toolTipString = "{} {} {} = {}".format(
-                        id,
-                        plateResults.loc[id, "Condition"],
-                        self.sortScoreComboBox.currentText(),
-                        round(
-                            plateResults.loc[id, self.sortScoreComboBox.currentText()],
-                            2,
-                        ),
-                    )
-                    self.btn2DArray[i][j].setToolTip(toolTipString)
+            enabled = True
+        else:
+            styleString = "QPushButton {  border-width: 2px; border-color: white; background-color: gray } QPushButton:checked { border-color:  black; border-style: inset;}"
+            enabled = False
+        button.setEnabled(enabled)
+        button.setStyleSheet(styleString)
+        if tooltip is not None:
+            button.setToolTip(tooltip)
 
     def createButtonArray(self, hbox):
-        # create
-        #     creation looks reverse
-        #     create an array of "cols_count" cols, for each of the "rows_count" rows
-        #        all elements are initialized to 0
-        self.btn2DArray = [
-            [0 for j in range(self.colsCount)] for i in range(self.rowsCount)
-        ]
-        self.gray = QColor.fromRgbF(0.501961, 0.501961, 0.501961, 1.000000)
-        self.styleString = "QPushButton {  border-width: 2px; border-color: black; background-color: gray } QPushButton:checked { border-color: green; border-style: inset;}"
-        letters = ["A", "B", "C", "D", "E", "F", "G", "H"]
+        ## \brief self.buttons attribute contains all information related to samples selected in the GUI heatmap and their plots
+        # index is alphanumeric ID's (similar to mp.MoltenProtFit.plate_results), but columns contain the info on the state of the GUI:
+        # Visible (bool) - whether the button should be displayed at all - can be fetched from the button object
+        # Selected (bool) - whether the user clicked on the button - can be fetched from the button object
+        # Color (str) - matplotlib-compatible color for the curve
+        # Button - reference to the respective GUI button
+        # Tooltip - information displayed when mouse is over a button
+        # Line2D - reference to the matplotlib object of the experimental line; if None, then the curve was not plotted!
+        # LineColor - the color used for the line (e.g. from colorsafe list, or the same color as the button)
+        self.buttons = pd.DataFrame(index=core.alphanumeric_index, columns=( 'Button', 'Color', 'Tooltip', 'Line2D', 'LineColor',))
+        self.buttons.index.name = "ID"
+        
+        # constants for the button generation
         buttonSize = 40
+        letters = ["A", "B", "C", "D", "E", "F", "G", "H"]
+        
+        # populate the buttons DataFrame with actual buttons
         for j in range(self.colsCount):
             right_vbox = QVBoxLayout()
             for i in range(self.rowsCount):
-                self.btn2DArray[i][j] = QPushButton(letters[i] + str(j + 1))
-                self.btn2DArray[i][j].setObjectName(letters[i] + str(j + 1))
-                self.btn2DArray[i][j].setCheckable(True)
-                self.btn2DArray[i][j].setChecked(False)
-                self.btn2DArray[i][j].setEnabled(False)
-                # self.btn2DArray[i][j].hide()
-                self.btn2DArray[i][j].setFixedWidth(buttonSize)
-                self.btn2DArray[i][j].setFixedHeight(buttonSize)
-                self.btn2DArray[i][j].setStyleSheet(self.styleString)
-                self.btn2DArray[i][j].installEventFilter(self)
-                # self.connect(self.btn2DArray[i][j], SIGNAL('clicked()'), self.on_show)
-                self.btn2DArray[i][j].clicked.connect(self.on_show)
-                right_vbox.addWidget(self.btn2DArray[i][j])
+                button_name = letters[i] + str(j + 1)
+                button = QPushButton(button_name)
+                button.setObjectName(button_name)
+                button.setCheckable(True)
+                button.setChecked(False)
+                button.setEnabled(False)
+                button.setFixedWidth(buttonSize)
+                button.setFixedHeight(buttonSize)
+                button.setStyleSheet(self.buttonStyleString)
+                button.installEventFilter(self)
+                # pass the button name to the slot:
+                # borrowed [here](https://eli.thegreenplace.net/2011/04/25/passing-extra-arguments-to-pyqt-slot)
+                button.clicked.connect(partial(self.on_show, button_name))
+                right_vbox.addWidget(button)
+                # add button to buttons df
+                self.buttons.at[button_name, 'Button'] = button
             right_vbox.addStretch(1)
             hbox.addLayout(right_vbox)
         hbox.addStretch(1)
-
-    def enableButtons(self):
-        for j in range(self.colsCount):
-            for i in range(self.rowsCount):
-                self.btn2DArray[i][j].setEnabled(True)
-
-    def disableButtons(self):
-        for j in range(self.colsCount):
-            for i in range(self.rowsCount):
-                self.btn2DArray[i][j].setEnabled(False)
-
-    def resetButtons(self):
-        for j in range(self.colsCount):
-            for i in range(self.rowsCount):
-                self.btn2DArray[i][j].setStyleSheet(self.styleString)
-
+    
     def showOnlyValidButtons(self):
         # shows a button only if it is found in the raw data
-        for j in range(self.colsCount):
-            for i in range(self.rowsCount):
-                objectName = self.btn2DArray[i][j].objectName()
-                if self.moltenProtFit.testWellID(objectName, ignore_results=True):
-                    self.btn2DArray[i][j].show()
-                else:
-                    self.btn2DArray[i][j].hide()
+        for button_id in core.alphanumeric_index:
+            if self.moltenProtFit.testWellID(button_id, ignore_results=True):
+                self.buttons.at[button_id, 'Button'].show()
+            else:
+                self.buttons.at[button_id, 'Button'].hide()
 
-    def hideActions(self):
-        # hides actions that require a loaded dataset
-        self.mainWindow.actionSelectAll.setVisible(False)
-        self.mainWindow.actionDeselectAll.setVisible(False)
-        self.mainWindow.actionAnalysis.setVisible(False)
-        self.mainWindow.actionEdit_layout.setVisible(False)
-        self.mainWindow.actionSave_as_JSON.setVisible(False)
-        self.mainWindow.actionToolBar.setVisible(False)
-        self.mainWindow.actionToolBar.setEnabled(False)
-        self.mainWindow.actionShowHideProtocol.setVisible(False)
+    def actionsSetVisible(self, show):
+        # show/hide buttons that require a dataset to be loaded
+        self.showHideSelectDeselectAll(show)
+        self.mainWindow.actionAnalysis.setVisible(show)
+        self.mainWindow.actionEdit_layout.setVisible(show)
+        self.mainWindow.actionSave_as_JSON.setVisible(show)
+        self.mainWindow.actionToolBar.setVisible(show)
+        self.mainWindow.actionToolBar.setEnabled(show)
+        self.mainWindow.actionShowHideProtocol.setVisible(show)
 
     def resetGUI(self):
         # Make the GUI look like it was just opened:
         # analysis options, layout etc are hidden, all buttons are not clickable
         # This method is used when a file could not be opened
-        self.hideActions()
+        self.actionsSetVisible(False)
         self.resetButtons()
-        self.disableButtons()
+        self.setAllButtons('enable', False)
         self.populateDatasetComboBox([])# with an empty list as argument the combobox will be hidden
 
     def eventFilter(self, object, event):
-        # print object
-        if event.type() == QEvent.HoverMove:
-            # if object.isEnabled() :
-            if self.dataProcessed:
-                # print object.objectName()
-                if self.buttonChecked() == False:
-                    self.axes.clear()
-                    self.axes.grid(True)
-                    if self.axesDerivative != None:
-                        self.axesDerivative.clear()
-                        self.axesDerivative.grid(True)
-                    # else:
-                    #    print "self.axesDerivative == None", cfFilename,  currentframe().f_lineno
-                    if object.objectName() not in self.grayButtonsNames:
-                        self.plotFigAny(object.objectName())
+        '''
+        Event filter to handle additional button events (clicks are handled via method on_show)
+        '''
+        button_id = object.objectName() # get button ID
+        if (event.type() == QEvent.HoverMove):
+            # NOTE handling non-existing/gray samples is in method plotFigAny
+            if self.fileLoaded:
+                # plot new lines only if not registered
+                if self.buttons.at[button_id, 'Line2D'] is np.nan:
+                    self.plotFigAny(button_id)
                     self.canvas.draw()
-            else:
-                if self.buttonChecked() == False:
-                    if self.fileLoaded:
-                        self.axes.clear()
-                        self.axes.grid(True)
-                        self.plotFigAny(object.objectName())
-                        self.canvas.draw()
+            # TODO highlight the curve if it has already been selected
+            if object.isChecked():
+                pass
+
+        if (event.type() == QEvent.HoverLeave):
+            if not object.isChecked():
+                if self.buttons.at[button_id, 'Line2D'] is not np.nan:
+                    # NOTE when draw_canvas is false, then the curve will be only removed when a new one is plotted, this makes hovering more smooth, however, creates "undeletable" plots
+                    self.removeButtonLine2D(button_id)
+
         return False
 
     ## \brief This method plots a curve from a single well on the axes using the curve* set of settings and the processing status (raw or after analysis)
@@ -2286,194 +2442,258 @@ class MoltenProtMainWindow(QMainWindow):
         """
         Plot a curve from a single well on the axes
         using the curve* set of settings and the processing status (raw or after analysis)
+        
+        Parameters
+        ----------
+        wellID
+            a string with the alphanumeric well id; non-existent ID's are also handled
         """
         # some starting settings
         # NOTE MoltenProt internally uses K, but in future chemical denaturants can be here, too
         xlabel = "Temperature, K"
         ylabel = self.moltenProtFit.readout_type
-        # variable to store the current plot color
-        current_color = None
         # variable to have only one legend entry for exp/fit plots
         sample_label = False
-        # check if analysis was performed
-        if self.dataProcessed:
-            # the displayable elements primarily depend on curve type
-            # applicable to all types:
-            # curveLegendCheckBoxIsChecked - yes/no legend - but view is type-specific?
-            # curveMarkEverySpinBoxValue - density of datapoints
-            # curveViewComboboxCurrentText - Datapoints, Fit, Datapoints + Fit - also for van 't Hoff?
-            # applicable to exp and funf
-            # applicable to exp only
-            # curveDerivativeCheckBoxIsChecked - yes/no derivative plot
-            # curveBaselineCheckBoxIsChecked - yes/no baselines
-            if self.curveTypeComboboxCurrentText == "Experimental signal":
-                if (
-                    self.curveViewComboboxCurrentText == "Datapoints"
-                    or self.curveViewComboboxCurrentText == "Datapoints + Fit"
-                ):
-                    self.axes.plot(
-                        self.moltenProtFit.plate[wellID].index.values,
-                        self.moltenProtFit.plate[wellID],
-                        lw=0,
-                        marker=".",
-                        markevery=self.curveMarkEverySpinBoxValue,
-                        label=wellID,
-                    )
-                    current_color = self.axes.get_lines()[-1].get_color()
-                    sample_label = True
-
-                if (
-                    self.curveViewComboboxCurrentText == "Fit"
-                    or self.curveViewComboboxCurrentText == "Datapoints + Fit"
-                ):
-                    # if exp signal was plotted, do not add label to fit
-                    if sample_label:
-                        self.axes.plot(
-                            self.moltenProtFit.plate_fit[wellID].index.values,
-                            self.moltenProtFit.plate_fit[wellID],
-                            color=current_color,
-                        )
-                    else:
-                        self.axes.plot(
-                            self.moltenProtFit.plate_fit[wellID].index.values,
-                            self.moltenProtFit.plate_fit[wellID],
-                            color=current_color,
-                            label=wellID,
-                        )
-                    if current_color is None:
-                        current_color = self.axes.get_lines()[-1].get_color()
-
-                # draw Tm/Tagg or Tons
-                self.plotVlines(wellID, current_color)
-
-                if self.curveBaselineCheckBoxIsChecked:
-                    # draw baselines
-                    # calculate ponlynomials
-                    # TODO for line just 2 points are needed...
-                    poly_pre = np.poly1d(
-                        *self.moltenProtFit.plate_results.loc[
-                            [wellID], ["kN_fit", "bN_fit"]
-                        ].values
-                    )
-                    poly_post = np.poly1d(
-                        *self.moltenProtFit.plate_results.loc[
-                            [wellID], ["kU_fit", "bU_fit"]
-                        ].values
-                    )
-                    self.axes.plot(
-                        self.moltenProtFit.plate[wellID].index.values,
-                        poly_pre(self.moltenProtFit.plate[wellID].index.values),
-                        linestyle="--",
-                        color=current_color,
-                    )
-                    self.axes.plot(
-                        self.moltenProtFit.plate[wellID].index.values,
-                        poly_post(self.moltenProtFit.plate[wellID].index.values),
-                        linestyle="--",
-                        color=current_color,
-                    )
-            elif self.curveTypeComboboxCurrentText == "Baseline-corrected":
-                if "plate_raw_corr" in self.moltenProtFit.__dict__:
-                    """
-                    NOTE In this plotting mode no fit data exists
-                    """
-                    if (
-                        self.curveViewComboboxCurrentText == "Datapoints"
-                        or self.curveViewComboboxCurrentText == "Datapoints + Fit"
-                    ):
-                        self.axes.plot(
-                            self.moltenProtFit.plate_raw_corr[wellID].index.values,
-                            self.moltenProtFit.plate_raw_corr[wellID],
-                            linestyle=":",
-                            marker=".",
-                            markevery=self.curveMarkEverySpinBoxValue,
-                            label=wellID,
-                        )
-                        self.axes.set_ylim([-0.1, 1.1])
-                        current_color = self.axes.get_lines()[-1].get_color()
-                        # draw Tm/Tagg or Tons
-                        self.plotVlines(wellID, current_color)
-
-                    if (
-                        self.curveViewComboboxCurrentText == "Fit"
-                        or self.curveViewComboboxCurrentText == "Datapoints + Fit"
-                    ):
-                        # show warning in the status bar that the fit is not available here
-                        self.status_text.setText(
-                            "Fit data are not available in this plotting mode"
-                        )
-                else:
-                    self.status_text.setText(
-                        "This plot type is unavailable in selected analysis"
-                    )
-                ylabel = "Baseline-corrected"
+        
+        # set the color of all curves to be plotted
+        if self.curveHeatmapColorCheckBoxIsChecked:
+            current_color = self.buttons.at[wellID, 'Color']
         else:
-            # plot raw data
-            sourcedf = self.moltenProtFit.plate_raw
-            if self.moltenProtFit.testWellID(wellID):
-                self.axes.plot(
-                    sourcedf[wellID].index.values, sourcedf[wellID], label=wellID
+            current_color = self.currentCurveColor
+        
+        
+        # a list of all plotted lines
+        lines = []
+        
+        # check if the well exists anywhere in the data
+        if self.moltenProtFit.testWellID(wellID, ignore_results=True):
+            # a flag to request raw data plotting
+            # will only be false when processed data is available and plotted
+            plot_raw = True
+            
+            # the well is definitely recorded, but the fit might have failed or not even performed
+            if self.dataProcessed:
+                # main plotting part
+                if self.moltenProtFit.testWellID(wellID, ignore_results=False):
+                    # sample was successfully fit
+                    # the displayable elements primarily depend on curve type
+                    # applicable to all types:
+                    # curveLegendComboboxCurrentText - either show ID in legend or annotation, or no legend at all
+                    # curveMarkEverySpinBoxValue - density of datapoints
+                    # curveViewComboboxCurrentText - Datapoints, Fit, Datapoints + Fit - also for van 't Hoff?
+                    # applicable to exp and funf
+                    # applicable to exp only
+                    # curveDerivativeCheckBoxIsChecked - yes/no derivative plot
+                    # curveBaselineCheckBoxIsChecked - yes/no baselines
+                    
+                    # sample label is taken from the layout or well ID
+                    if self.curveLegendComboboxCurrentText == 'Annotation':
+                        label = self.moltenProtFit.plate_results.at[wellID, 'Condition']
+                    else:
+                        label = wellID
+                    
+                    if self.curveTypeComboboxCurrentText == "Experimental signal":
+                        if (
+                            self.curveViewComboboxCurrentText == "Datapoints"
+                            or self.curveViewComboboxCurrentText == "Datapoints + Fit"
+                        ):
+                            lines += self.axes.plot(
+                                self.moltenProtFit.plate[wellID].index.values,
+                                self.moltenProtFit.plate[wellID],
+                                lw=0,
+                                marker=".",
+                                markevery=self.curveMarkEverySpinBoxValue,
+                                label=label,
+                                color=current_color,
+                            )
+                            sample_label = True
+                        if (
+                            self.curveViewComboboxCurrentText == "Fit"
+                            or self.curveViewComboboxCurrentText == "Datapoints + Fit"
+                        ):
+                            # if exp signal was plotted, do not add label to fit
+                            if sample_label:
+                                lines += self.axes.plot(
+                                    self.moltenProtFit.plate_fit[wellID].index.values,
+                                    self.moltenProtFit.plate_fit[wellID],
+                                    color=current_color,
+                                )
+                            else:
+                                lines += self.axes.plot(
+                                    self.moltenProtFit.plate_fit[wellID].index.values,
+                                    self.moltenProtFit.plate_fit[wellID],
+                                    color=current_color,
+                                    label=label,
+                                )
+                            #if current_color is None:
+                            #    current_color = self.axes.get_lines()[-1].get_color()
+
+                        # draw Tm/Tagg or Tons
+                        lines += self.plotVlines(wellID, current_color)
+
+                        if self.curveBaselineCheckBoxIsChecked:
+                            # draw baselines
+                            # calculate polynomials
+                            poly_pre = np.poly1d(
+                                *self.moltenProtFit.plate_results.loc[
+                                    [wellID], ["kN_fit", "bN_fit"]
+                                ].values
+                            )
+                            poly_post = np.poly1d(
+                                *self.moltenProtFit.plate_results.loc[
+                                    [wellID], ["kU_fit", "bU_fit"]
+                                ].values
+                            )
+                            xmin_xmax = (self.moltenProtFit.plate[wellID].index.min(), self.moltenProtFit.plate[wellID].index.max())
+                            lines += self.axes.plot(
+                                xmin_xmax,
+                                poly_pre(xmin_xmax),
+                                linestyle="--",
+                                color=current_color,
+                            )
+                            lines += self.axes.plot(
+                                xmin_xmax,
+                                poly_post(xmin_xmax),
+                                linestyle="--",
+                                color=current_color,
+                            )
+                    elif self.curveTypeComboboxCurrentText == "Baseline-corrected":
+                        if "plate_raw_corr" in self.moltenProtFit.__dict__:
+                            """
+                            NOTE In this plotting mode no fit data exists
+                            """
+                            if (
+                                self.curveViewComboboxCurrentText == "Datapoints"
+                                or self.curveViewComboboxCurrentText == "Datapoints + Fit"
+                            ):
+                                lines += self.axes.plot(
+                                    self.moltenProtFit.plate_raw_corr[wellID].index.values,
+                                    self.moltenProtFit.plate_raw_corr[wellID],
+                                    lw=0,
+                                    #linestyle=":",
+                                    marker=".",
+                                    markevery=self.curveMarkEverySpinBoxValue,
+                                    label=label,
+                                    color=current_color,
+                                )
+                                self.axes.set_ylim([-0.2, 1.2])
+                                #current_color = self.axes.get_lines()[-1].get_color()
+                                # draw Tm/Tagg or Tons
+                                lines += self.plotVlines(wellID, current_color)
+
+                            if (
+                                self.curveViewComboboxCurrentText == "Fit"
+                                or self.curveViewComboboxCurrentText == "Datapoints + Fit"
+                            ):
+                                # show warning in the status bar that the fit is not available here
+                                self.status_text.setText(
+                                    "Fit data are not available in this plotting mode"
+                                )
+                                # show the derivative on the extra plot
+                    if (
+                        self.curveDerivativeCheckBoxIsChecked
+                        and self.axesDerivative is not None
+                    ):
+                        if self.curveTypeComboboxCurrentText == "Experimental signal":
+                            lines += self.axesDerivative.plot(
+                                self.moltenProtFit.plate_derivative[wellID].index.values,
+                                self.moltenProtFit.plate_derivative[wellID],
+                                color=current_color,
+                            )
+                        else:
+                            # derivative only available for exp signal
+                            lines.append(self.axesDerivative.text(
+                                0.5,
+                                0.5,
+                                "n/a",
+                                horizontalalignment="center",
+                                verticalalignment="center",
+                                transform=self.axesDerivative.transAxes,
+                            ))
+                        self.axesDerivative.set_xlabel("Temperature")
+                        self.axesDerivative.set_ylabel("1st Deriv.")
+                        # rescale axes
+                        self.axesDerivative.relim()
+                        self.axesDerivative.autoscale_view()
+                    # skip raw data plotting
+                    plot_raw = False
+            
+            if plot_raw:
+                # this is run in two cases: when then there are gray wells after analysis, or when no processing done yet
+                # NOTE this mode ignores the curveLegendComboBox and curveHeatmapColorCheckBox
+                sourcedf = self.moltenProtFit.plate_raw
+                lines += self.axes.plot(
+                        sourcedf[wellID].index.values, sourcedf[wellID], label=wellID, color=self.currentCurveColor
                 )
+        else:
+            print("Debug: non-existent well ID called: {}".format(wellID))
+        
         # set labels for axes
         self.axes.set_xlabel(xlabel)
         self.axes.set_ylabel(ylabel)
-
-        # show the derivative on the extra plot
-        # NOTE the check for None is needed to prevent crashes from restored settings
-        if (
-            self.curveDerivativeCheckBoxIsChecked
-            and self.axesDerivative is not None
-            and self.dataProcessed
-        ):
-            if self.curveTypeComboboxCurrentText == "Experimental signal":
-                self.axesDerivative.plot(
-                    self.moltenProtFit.plate_derivative[wellID].index.values,
-                    self.moltenProtFit.plate_derivative[wellID],
-                    color=current_color,
-                )
-            else:
-                # derivative only available for exp signal
-                self.axesDerivative.text(
-                    0.5,
-                    0.5,
-                    "n/a",
-                    horizontalalignment="center",
-                    verticalalignment="center",
-                    transform=self.axesDerivative.transAxes,
-                )
-            self.axesDerivative.set_xlabel("Temperature")
-            self.axesDerivative.set_ylabel("1st Deriv.")
-
+        # set xlim for axes based on the respective MoltenProt instance
+        self.axes.set(xlim=self.moltenProtFit.xlim)
+        # rescale axes
+        self.axes.relim()
+        self.axes.autoscale_view()    
+        
         # create legend (if respective axes already exists)
-        if self.curveLegendCheckBoxIsChecked and self.axesLegend is not None:
+        if self.curveLegendComboboxCurrentText != 'None' and self.axesLegend is not None:
+            # select column number based on the legend display mode
+            if self.curveLegendComboboxCurrentText == 'ID':
+                ncol = 8
+            if self.curveLegendComboboxCurrentText == 'Annotation':
+                ncol = 2
+
             self.legend = self.axes.legend(
                 bbox_to_anchor=(0.0, 0.8, 1.0, 0.0),
                 bbox_transform=self.axesLegend.transAxes,
-                ncol=8,
+                ncol=ncol,
                 mode="expand",
             )
+        # if plotting was successful, record the line color and line list for future reference
+        self.buttons.at[wellID, 'LineColor'] = current_color
+        self.buttons.at[wellID, 'Line2D'] = lines
 
     def plotVlines(self, wellID, current_color):
         """
         Adds a Tm/Tagg or Tonset vertical line for wellID with color current_color based on the settings
+        
+        Arguments
+        ---------
+        wellID
+            ID of the sample to plot
+        current_color
+            which color to use
+        
+        Returns
+        -------
+        A list of plotted Line2D objects
+        
+        Notes
+        -----
+        Lines may have different names from different models; just use the contents of MPFit.plotlines
         """
-        # NOTE lines may have different names from different models; just use the contents of MPFit.plotlines
+        out = []
         if self.curveVlinesCheckBoxIsChecked:
             for parameter_name in self.moltenProtFit.plotlines:
                 # NOTE lines are not labeled so that they are not listed in the legend
+                out.append(
                 self.axes.axvline(
                     self.moltenProtFit.plate_results[parameter_name][wellID],
                     ls="dotted",
                     c=current_color,
                     lw=3,
-                )
+                ))
                 # add text with the parameter used to generate the line
+                out.append(
                 self.axes.text(
                     self.moltenProtFit.plate_results[parameter_name][wellID],
                     self.axes.get_ylim()[0]
                     + 0.05 * (self.axes.get_ylim()[1] - self.axes.get_ylim()[0]),
                     " " + parameter_name,
-                )  # ,fontsize=12)
+                ))
+        return out
 
     ## \brief this method creates subplots for derivative and/or legend
     def manageSubplots(self):
@@ -2482,7 +2702,7 @@ class MoltenProtMainWindow(QMainWindow):
             self.fig.clear()
             if (
                 self.curveDerivativeCheckBoxIsChecked
-                and self.curveLegendCheckBoxIsChecked
+                and self.curveLegendComboboxCurrentText != 'None' 
             ):
                 self.axes = self.fig.add_subplot(3, 1, 1)
                 # TODO hide ticks for main plot when deriv plot is on
@@ -2492,7 +2712,7 @@ class MoltenProtMainWindow(QMainWindow):
                 self.axes = self.fig.add_subplot(2, 1, 1)
                 self.axesDerivative = self.fig.add_subplot(2, 1, 2, sharex=self.axes)
                 self.axesLegend = None
-            elif self.curveLegendCheckBoxIsChecked:
+            elif self.curveLegendComboboxCurrentText != 'None':
                 self.axes = self.fig.add_subplot(2, 1, 1)
                 self.axesDerivative = None
                 self.axesLegend = self.fig.add_subplot(2, 1, 2)
@@ -2504,6 +2724,10 @@ class MoltenProtMainWindow(QMainWindow):
             # remove spines from legend subplot
             if self.axesLegend != None:
                 self.axesLegend.axis("off")
+            # set axes grids
+            self.axes.grid(True)
+            if self.axesDerivative is not None:
+                self.axesDerivative.grid(True)
         else:
             # without complete analysis most visualizations are not possible
             self.status_text.setText(
@@ -2515,7 +2739,7 @@ class MoltenProtMainWindow(QMainWindow):
     def on_legendChecked(self):
         self.getPlotSettings()
         self.fig.clear()
-        if self.curveLegendCheckBoxIsChecked:
+        if self.curveLegendComboboxCurrentText != 'None':
             # create a dedicated subplot for holding the legend
             if self.axesDerivative != None:
                 self.axes = self.fig.add_subplot(3, 1, 1)
@@ -2535,30 +2759,6 @@ class MoltenProtMainWindow(QMainWindow):
                     self.axes = self.fig.add_subplot(1, 1, 1)
 
     @pyqtSlot()
-    def on_derivativeSubplotChecked(self):
-        self.getPlotSettings()
-        self.fig.clear()
-        # update status of plot settings
-        if self.curveDerivativeCheckBoxIsChecked:
-            # if the derivative subplot doesn't exist, then create one
-            # no derivative drawn for raw data
-            if self.axesDerivative is None and self.dataProcessed:
-                if showVersionInformation:
-                    print(
-                        "self.axesDerivative == None",
-                        cfFilename,
-                        currentframe().f_lineno,
-                    )
-                # self.addDerivativeSublot()
-                self.axes = self.fig.add_subplot(2, 1, 1)
-                self.axesDerivative = self.fig.add_subplot(2, 1, 2)
-        else:
-            # if the derivative plotting is not requested, delete the subplot
-            if self.axesDerivative != None:
-                self.axes = self.fig.add_subplot(1, 1, 1,)
-                self.axesDerivative = None
-
-    @pyqtSlot()
     def on_curveBaselineCheckBoxChecked(self):
         if showVersionInformation:
             print(
@@ -2571,8 +2771,8 @@ class MoltenProtMainWindow(QMainWindow):
     def createMatplotlibStuff(self):
         self.main_frame = QWidget()
         self.fig = Figure()
-        gs = gridspec.GridSpec(1, 1)
-        self.axes = self.fig.add_subplot(gs[0])
+        self.axes = self.fig.add_subplot()
+        self.axes.grid(True)
         self.canvas = FigureCanvas(self.fig)
         # print(type(self.canvas),  currentframe().f_lineno,  cfFilename)
         self.canvas.setParent(self.main_frame)
@@ -2596,13 +2796,12 @@ class MoltenProtMainWindow(QMainWindow):
         # self.showLegendAction.setCheckable(True)
         # Show or hide the legend.
         # self.showLegendAction.triggered.connect(self.on_legendChecked)
-        # Create matplotlib - show/hide the derevative.
-        # self.showDerivativeSubplotAction = QAction("Show derivateve subplot",  self.main_frame)
+        # Create matplotlib - show/hide the derivative.
+        # self.showDerivativeSubplotAction = QAction("Show derivative subplot",  self.main_frame)
         # self.showDerivativeSubplotAction.setCheckable(True)
         # Hide the derivative window.
         # self.showDerivativeSubplotAction.setVisible(False)
         # actions after using the checkbox
-        # self.showDerivativeSubplotAction.triggered.connect(self.on_derivativeSubplotChecked)
         # add matplolib actions to Qt context menu
         # self.main_frame.addAction(self.showLegendAction)
         # self.main_frame.addAction(self.showDerivativeSubplotAction)
@@ -2628,13 +2827,13 @@ class MoltenProtMainWindow(QMainWindow):
 
     ## \brief This method creates sortScoreComboBox and datasetComboBox, sets tooltips for them
     def createComboBoxesForActionToolBar(self):
-        ## \brief  This member holds the sortScoreComboBox.
+        ## \brief  This attribute holds the sortScoreComboBox.
         self.sortScoreComboBox = QComboBox()
         self.sortScoreComboBox.setToolTip("Select sort score")
         self.sortScoreComboBox.currentIndexChanged.connect(
             self.setButtonsStyleAccordingToNormalizedData
         )
-        ## \brief  This member holds the datasetComboBox.
+        ## \brief  This attribute holds the datasetComboBox.
         self.datasetComboBox = QComboBox()
         self.datasetComboBox.setToolTip("Select a dataset for viewing")
         self.datasetComboBox.currentIndexChanged.connect(self.on_changeInputTable)
@@ -2646,7 +2845,6 @@ class MoltenProtMainWindow(QMainWindow):
         self.colorMapComboBox = self.moltenProtToolBox.ui.colormapForPlotComboBox
         self.moltenProtToolBox.ui.colormapForPlotLabel.hide()
         self.colorMapComboBox.hide()
-        # self.colorMapComboBox.setToolTip("Select colormap, please.")
         self.colorMapComboBox.insertItems(1, self.colorMapNames)
         index = int(
             self.settings.value(
@@ -2660,9 +2858,9 @@ class MoltenProtMainWindow(QMainWindow):
     def on_changeColorMap(self):
         self.currentColorMapIndex = self.colorMapComboBox.currentIndex()
         self.currentColorMap = self.colorMapNames[self.currentColorMapIndex]
-        self.on_deselectAll()
+        self.on_deselectAll()#TODO can this be avoided?
         if self.moltenProtFit != None:
-            self.setButtonsStyle()
+            self.setButtonsStyleAccordingToNormalizedData()
 
     ## \brief This method adds  self.sortScoreComboBox to self.mainWindow.actionToolBar if it was not already added. Then clears items in it, populates self.sortScoreComboBox by
     #   self.moltenProtFit.getResultsColumns() method and shows it. \sa core.MoltenProtFit.getResultsColumns() \sa sortScoreComboBox
@@ -2725,6 +2923,7 @@ class MoltenProtMainWindow(QMainWindow):
     def connectSignals2Actions(self):
         self.mainWindow.actionNew.triggered.connect(self.on_actionNewTriggered)
         self.mainWindow.actionLoad.triggered.connect(self.on_loadFile)
+        self.mainWindow.actionLoad_sample_data.triggered.connect(self.on_actionLoad_sample_data)
         self.mainWindow.actionSave_as_JSON.triggered.connect(
             self.on_actionSave_as_JSONTriggered
         )
@@ -2790,7 +2989,6 @@ class MoltenProtMainWindow(QMainWindow):
 
     @pyqtSlot()
     def on_actionShowHideProtocol(self):
-        # print "on_actionShowHideProtocol"
         self.mainWindow.protocolDockWidget.setVisible(
             self.mainWindow.actionShowHideProtocol.isChecked()
         )
@@ -2811,6 +3009,10 @@ class MoltenProtMainWindow(QMainWindow):
         self.layoutDialog.ui.buttonBox.button(QDialogButtonBox.Open).clicked.connect(
             self.openLayout
         )
+        # a button to restore original layout
+        self.layoutDialog.ui.buttonBox.button(QDialogButtonBox.Reset).clicked.connect(
+            self.resetLayout
+        )
 
     def layoutTableCellClicked(self, row, column):
         if showVersionInformation:
@@ -2828,8 +3030,11 @@ class MoltenProtMainWindow(QMainWindow):
             caption=self.tr("Enter png file name "),
             directory=self.lastDir,
             filter="png Files (*.png)",
-        )
-        pixMap.save(filename[0], "PNG")
+        )[0]
+        # add PNG suffix if needed
+        if filename[-4:] != '.png':
+            filename += '.png'
+        pixMap.save(filename, "PNG")
 
     def setExpertMode(self):
         if showVersionInformation:

@@ -1,0 +1,14 @@
+# 0.3.1-alpha
+* PDF reports!
+* Support for "raw" XLSX input
+* FAQ section added to the documentation, lots of useful advice there!
+* Initial support for CD and UV fluorescence data (analyse individual wavelengths vs temperature)
+* Additional changes:
+    * improved santoro1988i model for 3-state transitions
+    * check temperature ramp when parsing XLSX files
+    * demo files can be loaded right from the GUI
+    * color curves by the color from heatmap
+* GUI enhancements and bugfixes
+
+# 0.1.1-alpha-pro-20-0202
+Initial public release.

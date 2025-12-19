@@ -1,10 +1,3 @@
-Copyright 2018,2019,2020 Vadim Kotov
-
-Copying and distribution of this file, with or without modification,
-are permitted in any medium without royalty provided the copyright
-notice and this notice are preserved.  This file is offered as-is,
-without any warranty.
-
 # Installation
 
 ## Dependencies
@@ -12,51 +5,54 @@ without any warranty.
 ### Using conda
 1) Download [miniconda installation script](https://conda.io/miniconda.html):
 
-GNU/Linux command:
-```
-wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
-```
-32-bit installation:
-```
-wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86.sh
-```
+    GNU/Linux command:
+    
+    ```
+    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    ```
+    
+    32-bit installation:
+    
+    ```
+    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86.sh
+    ```
 
 2) Follow installation [instructions](https://conda.io/docs/user-guide/install/index.html)
 
-GNU/Linux command:
+    GNU/Linux command:
 
-```
-bash ./Miniconda3-latest-Linux-x86_64.sh -b -p /miniconda/installation/directory
-```
+    ```
+    bash ./Miniconda3-latest-Linux-x86_64.sh -b -p /miniconda/installation/directory
+    ```
 
-NOTE: to write in an existing directory, add option `-f`
-NOTE: miniconda must be added to PATH, either manually or through editing `~/.bashrc`, example commands:
+    NOTE: to write in an existing directory, add option `-f`
+    NOTE: miniconda must be added to PATH, either manually or through editing `~/.bashrc`, example commands:
 
-```
-export PATH=/miniconda/install/directory/bin:$PATH
-source /miniconda/install/directory/bin/activate
-```
+    ```
+    export PATH=/miniconda/install/directory/bin:$PATH
+    source /miniconda/install/directory/bin/activate
+    ```
 
-Windows command (fails in PowerShell):
+    Windows command (fails in PowerShell):
 
-```
-set PATH=%PATH%;C:\path\to\miniconda\;C:\path\to\miniconda\Scripts\
-```
+    ```
+    set PATH=%PATH%;C:\path\to\miniconda\;C:\path\to\miniconda\Scripts\
+    ```
 
-NOTE: if conda is already installed (version 2 or 3), just create a dedicated environment:
+    NOTE: if conda is already installed (version 2 or 3), just create a dedicated environment:
 
-```
-conda create --name moltenprot python=3
-conda activate moltenprot
-```    `
+    ```
+    conda create --name moltenprot python=3
+    conda activate moltenprot
+    ```    `
 
 3) Install the dependencies:
 
-```
-conda install pandas scipy openpyxl xlrd matplotlib pyqt
-```
+    ```
+    conda install pandas scipy openpyxl xlrd matplotlib pyqt setuptools
+    ```
 
-NOTE: pyqt is only required to run the GUI mode
+NOTE: pyqt is only required to run the GUI
 
 Optional: install joblib module to run some parts of the code in parallel
 
@@ -65,80 +61,79 @@ conda install joblib
 ```
 
 ### Using pip
-1) download and install Python 3 with tk/tcl support, pip and added to PATH
-[Windows](https://www.python.org/downloads/windows/)
-Mac:
-* if needed, install homebrew:
+1) download and install Python 3 with tk/tcl support, pip and add it to PATH
+    [Windows](https://www.python.org/downloads/windows/)
+    
+    Mac:
+    * if needed, install homebrew:
 
-```
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-```
+    ```
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+    ```
 
-* install Python 3
+    * install Python 3
 
-```
-brew install python3
-```
+    ```
+    brew install python3
+    ```
 
-NOTE: On recent GNU/Linux distros dependencies can be installed from the package manager (even without pip).
+    NOTE: On recent GNU/Linux distros dependencies can be installed from the package manager (even without pip).
 
 2) Install dependencies:
-`pip install pandas scipy openpyxl xlrd matplotlib pyqt5`
+    `pip install pandas scipy openpyxl xlrd matplotlib pyqt5 setuptools`
 
-NOTE: on Mac with Homebrew use pip3 instead
+    NOTE: on Mac with Homebrew use pip3 instead
 
 ## MoltenProt
 1) download the source code:
 
-```
-git clone https://gitlab.com/vadim-r-kotov/moltenprot.git
-```
+    `http://marlovitslab.org/lab/Download.html`
 
-NOTE: MoltenProt can be run straight away without installation from the folder where it was downloaded:
+    NOTE: MoltenProt can be run straight away without installation from the folder where it was downloaded:
 
-```
-python moltenprot --help
-python moltenprot --gui
-```
+    ```
+    python moltenprot --help
+    python moltenprot --gui
+    ```
 
 2) build and install MoltenProt via `setup.py`
 
-```
-python setup.py install
-```
+    ```
+    python setup.py install
+    ```
 
-keep track of installed files:
+    keep track of installed files:
 
-```
-python setup.py install --record installed_files.txt
-```
+    ```
+    python setup.py install --record installed_files.txt
+    ```
 
-Upon installation the following commands will be available for CLI and GUI modes:
+    Upon installation the following commands will be available for CLI and GUI modes:
 
-```
-moltenprot
-moltenprot_gui
-```
+    ```
+    moltenprot
+    moltenprot_gui
+    ```
 
-MoltenProt can be also started anywhere as a Python module:
+    MoltenProt can be also started anywhere as a Python module:
 
-```
-python -m moltenprot --gui
-```
+    ```
+    python -m moltenprot --gui
+    ```
 
 3) Create shortcuts (optional) for a terminal-less startup:
 
-* install [shortcutter](https://pypi.org/project/shortcutter/) via conda:
+    * install [shortcutter](https://pypi.org/project/shortcutter/) via conda:
 
-```
-conda install -c defaults -c conda-forge shortcutter
-```
+    ```
+    conda install -c defaults -c conda-forge shortcutter
+    ```
 
-* load the conda environment with MoltenProt and run:
+    * load the conda environment with MoltenProt and run:
 
-```
-shortcutter moltenprot_gui --name MoltenProt
-```
+    ```
+    shortcutter moltenprot_gui --name MoltenProt
+    ```
 
 This will create a desktop and menu shortcuts for MoltenProt GUI (use options `--desktop` or `--menu` to create a specific one). The shortcuts will have a default icon. The MoltenProt icon is located in `moltenprot/ui/icons/app_icon.ico`.
 
@@ -200,3 +195,11 @@ pyinstaller -y -w -n moltenprot_mac  -i moltenprot/ui/icons/app_icon.ico --add-d
 * When bundled from conda, Windows version does not load beyound the splashscreen and data analysis does not start - crashes without any message. Packaging works, when everything is installed with standard Python distribution and pip
 * bundled -w mode does not print anything to the command line, however, the CLI itself works
 * if getting `ModuleNotFoundError: No module named 'pkg_resources.py2_warn`, downgrade setuptools `pip3 install --upgrade 'setuptools<45.0.0'`
+
+
+Copyright 2018-2021 Vadim Kotov
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.  This file is offered as-is,
+without any warranty.

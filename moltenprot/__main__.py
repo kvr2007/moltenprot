@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Copyright 2018,2019,2020 Vadim Kotov, Thomas C. Marlovits
+Copyright 2018-2021 Vadim Kotov, Thomas C. Marlovits
 
     This file is part of MoltenProt.
 
@@ -256,7 +256,11 @@ def CLIparser():
     csv_grp.add_argument(
         "--dec", default=core.defaults["dec"], type=str, help=core.defaults["dec_h"]
     )
-
+    
+    csv_grp.add_argument(
+       "--spectrum" , action='store_true', help=core.defaults['spectrum_h']
+    )
+    
     # for CSV input - specify with denaturant is used and type of readout
     csv_grp.add_argument(
         "-d",
@@ -276,12 +280,18 @@ def CLIparser():
     )
 
     ## XLSX-specific settings
-
     # refolding ramp
     xls_grp.add_argument(
         "--refold",
         action="store_true",
         help="For XLSX input: indicate if refolding ramp was used",
+    )
+
+    # raw data
+    xls_grp.add_argument(
+        "--raw",
+        action="store_true",
+        help="For XLSX input: indicate if \"raw\" rather than \"processed\" file is provided",
     )
 
     ## Output options
@@ -297,9 +307,10 @@ def CLIparser():
     # report argument
     out_grp.add_argument(
         "-r",
-        "--report",
-        action="store_true",
-        help="Generate an interactive HTML report, forces XLSX output",
+        "--report_format",
+        default=None,
+        choices=['pdf', 'xlsx', 'html'],
+        help="Make a report in PDF, XLSX or HTML format",
     )
 
     # argument for *.xlsx export
@@ -322,13 +333,6 @@ def CLIparser():
         "--genpics",
         action="store_true",
         help="Generate plots of experimental data, fits and derivatives",
-    )
-
-    # argument for creating top5 plots
-    out_grp.add_argument(
-        "--top5",
-        action="store_true",
-        help="Plot together the 5 best unfolding curves based on Tm_init, S, Hm_fit, Tm_fit",
     )
 
     # argument for creating heatmaps
@@ -360,9 +364,7 @@ def MoltenprotCLI(args):
     """
     # print citation and exit
     if args.citation:
-        print(
-            "\nIf you found MoltenProt helpful in your work, please cite:\nKotov et al., Protein Science (2021)\ndoi: 10.1002/pro.3986\n"
-        )
+        print(core.citation['long'])
         sys.exit(0)
 
     # print version info from core
@@ -428,22 +430,32 @@ def MoltenprotCLI(args):
         os.makedirs(resultfolder)
 
         if file_ext == ".csv":
-            data = core.parse_plain_csv(
-                input_file,
-                scan_rate=args.scan_rate,
-                sep=args.sep,
-                dec=args.dec,
-                layout=args.layout,
-                denaturant=args.denaturant,
-                readout=args.readout,
-            )
+            if args.spectrum:
+                data = core.parse_spectrum_csv(
+                    input_file,
+                    scan_rate=args.scan_rate,
+                    sep=args.sep,
+                    dec=args.dec,
+                    denaturant=args.denaturant,
+                    readout=args.readout,
+                )                
+            else:
+                data = core.parse_plain_csv(
+                    input_file,
+                    scan_rate=args.scan_rate,
+                    sep=args.sep,
+                    dec=args.dec,
+                    layout=args.layout,
+                    denaturant=args.denaturant,
+                    readout=args.readout,
+                )
         elif file_ext == ".xlsx":
             if args.model == "lumry_eyring":
                 LE = True
             else:
                 LE = False
 
-            data = core.parse_prom_xlsx(input_file, refold=args.refold, LE=LE)
+            data = core.parse_prom_xlsx(input_file, raw=args.raw, refold=args.refold, LE=LE)
 
         elif file_ext == ".json":
             # NOTE currently this would mean that the previous JSON session is re-analysed with new settings
@@ -499,7 +511,7 @@ def MoltenprotCLI(args):
         else:
             data.WriteOutputAll(
                 outfolder=resultfolder,
-                report=args.report,
+                report_format=args.report_format,
                 xlsx=args.xlsx,
                 genpics=args.genpics,
                 heatmaps=args.heatmaps,

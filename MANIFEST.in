@@ -6,3 +6,4 @@ include moltenprot/doc/index.pdf
 include moltenprot/doc/*.png
 include moltenprot/doc/*.gif
 include moltenprot/VERSION
+include moltenprot/demo_data/*
