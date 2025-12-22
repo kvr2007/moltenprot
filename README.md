@@ -27,8 +27,8 @@ If you have python (versions 3.8-3.10) available on your system, you can install
 
 3. Install the MoltenProt package from this repo:
     
-    `pip install git+https://github.com/kvr2007/moltenprot.git@master#egg=moltenprot[gui,multiproc]`
-    
+    `pip install --use-pep517 moltenprot[gui,multiproc]@git+https://github.com/kvr2007/moltenprot.git@master`
+
     (this will install with GUI and multiprocessing capability)
 
 You can now launch the GUI with command `moltenprot_gui` or access the CLI with `moltenprot`.
