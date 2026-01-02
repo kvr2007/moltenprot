@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
 
-"""
-Copyright 2018-2021 Vadim Kotov, Thomas C. Marlovits
-
-    This file is part of MoltenProt.
-
-    MoltenProt is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    MoltenProt is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with MoltenProt.  If not, see <https://www.gnu.org/licenses/>.
-"""
+# Copyright 2018-2021,2025 Vadim Kotov, Thomas C. Marlovits
+# 
+#     This file is part of MoltenProt.
+# 
+#     MoltenProt is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+# 
+#     MoltenProt is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+# 
+#     You should have received a copy of the GNU General Public License
+#     along with MoltenProt.  If not, see <https://www.gnu.org/licenses/>.
 
 # CLI interface
 import argparse
+
+# get available cpus
+from multiprocessing import cpu_count
 
 # creating folders
 import os
@@ -29,23 +30,14 @@ import sys
 # deleting folders
 from shutil import rmtree
 
-# get the current date and time (GUI progressbar)
-import time
-
-# running git queries
-# import subprocess
-# HACK this allows to test the module without proper installation:
-# python moltenprot --help
-path = os.path.dirname(sys.modules[__name__].__file__)
-path = os.path.join(path, "..")
-sys.path.insert(0, path)
 from moltenprot import core
+
 
 ### Parser for CLI options
 def CLIparser():
     """
     Creates the command-line argument parser object
-    
+
     Returns
     -------
     parser
@@ -298,7 +290,7 @@ def CLIparser():
     xls_grp.add_argument(
         "--panta-rhei",
         action="store_true",
-        help='For XLSX input: indicate if the XLSX data was exported from a Panta machine',
+        help="For XLSX input: indicate if the XLSX data was exported from a Panta machine",
     )
 
     ## Output options
@@ -361,7 +353,7 @@ def CLIparser():
 ### Main functions CLI and GUI
 def MoltenprotCLI(args):
     """
-    
+
     Run MoltenProt analysis in command-line mode
 
     Parameters
@@ -386,8 +378,6 @@ def MoltenprotCLI(args):
 
     # check if the user requested too many jobs:
     if args.n_jobs > 1:
-        from multiprocessing import cpu_count
-
         if args.n_jobs > cpu_count():
             print(
                 "Warning: the amount of requested jobs ({}) is higher than the amount of CPU's available ({})\nprogram execution may be slow!".format(
@@ -457,13 +447,14 @@ def MoltenprotCLI(args):
                     readout=args.readout,
                 )
         elif file_ext == ".xlsx":
-            if args.model == "lumry_eyring":
-                LE = True
-            else:
-                LE = False
+            LE = args.model == "lumry_eyring"
 
             data = core.parse_prom_xlsx(
-                input_file, raw=args.raw, refold=args.refold, LE=LE, panta_rhei=args.panta_rhei,
+                input_file,
+                raw=args.raw,
+                refold=args.refold,
+                LE=LE,
+                panta_rhei=args.panta_rhei,
             )
 
         elif file_ext == ".json":
@@ -530,94 +521,12 @@ def MoltenprotCLI(args):
             )
 
 
-# ATTENTION!
-# Below is doxygen documentation code.
-##  \brief Start up the GUI of MoltenProt
-#     \details
-#   - Import necessary PyQt modules and show information about PyQt and Qt versions used in current python environment.
-#   - Create Qt GUI application.
-#   - Create and show splashscreen.
-#   - Create MoltenProtMainWindow class instance and set it size and placement.
-#   - Run GUI MoltenProt application.
-#    \sa moltenprotgui.MoltenProtMainWindow
-#     \param localizationStuffFlag - If True use Qt internationalization facilities.
-#     \todo TODO list for MoltenprotGUI.
-def MoltenprotGUI(localizationStuffFlag=False):
-    import PyQt5.QtCore as QtCore
-    from PyQt5.QtCore import QTranslator, QLocale, Qt
-    from PyQt5.QtWidgets import (
-        QApplication,
-        QSplashScreen,
-        QDesktopWidget,
-        QProgressBar,
-    )
-    from PyQt5.QtGui import QPixmap, QIcon
+def MoltenprotGUI():
+    "Launches the GUI"
+    # importing here so that GUI errors to do crash the command line
+    from moltenprot.gui import LaunchMoltenprotGUI
 
-    from moltenprot import gui
-
-    """
-    Some tricks for the GUI to supprot Hi-DPI displays, see below for more info:
-    https://stackoverflow.com/questions/41331201/pyqt-5-and-4k-screen
-    https://doc.qt.io/qt-5/highdpi.html
-    """
-    os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
-    QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
-    app = QApplication(sys.argv)
-
-    splashPixmap = QPixmap(":/splash.png")
-    # splash = QSplashScreen(QDesktopWidget().screen(), splashPixmap, Qt.WindowStaysOnTopHint)
-    splash = QSplashScreen(splashPixmap)
-    splash.setEnabled(False)
-    # adding progress bar
-    progressBar = QProgressBar(splash)
-    progressBar.setMaximum(10)
-    progressBar.setGeometry(0, splashPixmap.height() - 50, splashPixmap.width(), 20)
-    splash.show()
-    for i in range(1, 11):
-        progressBar.setValue(i)
-        t = time.time()
-        while time.time() < t + 0.1:
-            app.processEvents()
-
-    if localizationStuffFlag:
-        # Localization stuff
-        locale = QLocale.system().name()
-        print(locale)
-        qtTranslator = QTranslator()
-        # if qtTranslator.load("qt_" + locale, ":/"):
-        if qtTranslator.load("qt_ru", ":/"):
-            app.installTranslator(qtTranslator)
-        else:
-            print("Failed to load locale")
-        appTranslator = QTranslator()
-        if appTranslator.load("moltenprot_ru", ":/"):
-            app.installTranslator(appTranslator)
-        else:
-            print("Failed to load application locale.")
-    else:
-        pass  # Localization not implemented
-    app.setOrganizationName("MoltenProt")
-    app.setApplicationName("moltenprot")
-    app.setWindowIcon(QIcon(":/MP_icon.png"))
-    # print app.arguments()
-    moltenProtMainWindow = gui.MoltenProtMainWindow()
-    width = int(moltenProtMainWindow.width())
-    height = int(moltenProtMainWindow.height())
-    wid = QDesktopWidget()
-    screenWidth = int(wid.screen().width())
-    screenHeight = int(wid.screen().height())
-    moltenProtMainWindow.setGeometry(
-        int((screenWidth / 2) - (width / 2)),
-        int((screenHeight / 2) - (height / 2)),
-        width,
-        height,
-    )
-    # forces main window decorator on Windows
-    moltenProtMainWindow.setWindowFlags(Qt.Window)
-    moltenProtMainWindow.show()
-    # Hide splashscreen
-    splash.finish(moltenProtMainWindow)
-    app.exec_()
+    LaunchMoltenprotGUI()
 
 
 ##  \brief Main function for the startup script

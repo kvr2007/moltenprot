@@ -9,7 +9,7 @@ MoltenProt is a graphical and command-line application for fitting protein therm
 
 ## Installation
 
-If you have python (versions 3.8-3.10) available on your system, you can install MoltenProt as follows: 
+If you have python (versions 3.8 and above) available on your system, you can install MoltenProt as follows: 
 
 1. (OPTIONAL) create a virtual environment:
     
@@ -36,6 +36,10 @@ You can now launch the GUI with command `moltenprot_gui` or access the CLI with 
 For additional documentation see [INSTALL](INSTALL.md).
 
 [CHANGELOG](CHANGELOG.md)
+
+To test the installation run:
+
+`python -m moltenprot.test`
 
 ### Pre-packaged binaries
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-
-# Copyright 2018-2021 Vadim Kotov, Thomas C. Marlovits
+'Implments a graphical interface for MoltenProt'
+# Copyright 2018-2021,2025 Vadim Kotov, Thomas C. Marlovits
 #
 #   This file is part of MoltenProt.
 #
@@ -18,7 +18,15 @@
 #    along with MoltenProt.  If not, see <https://www.gnu.org/licenses/>.
 
 # handling exceptions
-import sys, os
+import sys
+import os
+# For printing line number and file name
+from inspect import currentframe, getframeinfo
+import traceback
+# get the current date and time (GUI progressbar)
+import time
+# for passing clicked button ID's
+from functools import partial
 
 # For platform description
 import platform
@@ -27,70 +35,85 @@ import platform
 import pandas as pd
 import numpy as np
 
-# core MoltenProt functions
-from . import core
-
 # Graphics module.
 import matplotlib
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib import cm
+# A cycler for color-safe 8-color palette from https://jfly.uni-koeln.de/color/
+from cycler import cycler
 
-# import PyQt5
-try:
-    from PyQt5.QtCore import (
-        QThread,
-        QThreadPool,
-        QRunnable,
-        QObject,
-        pyqtSignal,
-        pyqtSlot,
-        QAbstractTableModel,
-        Qt,
-        QFile,
-        # QTextStream,# for text logging, disabled
-        QSettings,
-        QEvent,
-        QUrl,
-        QFileInfo,
-        QSize,
-    )
-    from PyQt5.QtGui import QColor, QIcon, QKeySequence, QPalette, QFont
-    from PyQt5.QtWidgets import (
-        QMainWindow,
-        QDialog,
-        QAction,
-        QLabel,
-        QComboBox,
-        QToolBar,
-        QWidget,
-        QTableWidgetItem,
-        QTextBrowser,
-        QListView,
-    )
-    from PyQt5.QtWidgets import (
-        QAbstractItemView,
-        QVBoxLayout,
-        QHBoxLayout,
-        QPushButton,
-        QDialogButtonBox,
-        QMessageBox,
-        QFileDialog,
-        QFontDialog,
-    )
-    from PyQt5.QtWidgets import QApplication, QDesktopWidget, QHeaderView, QItemDelegate
-    from PyQt5.Qt import PYQT_VERSION_STR
-    from PyQt5 import uic, QtWidgets
-except ImportError:
-    print(
-        "Fatal: PyQt5 module not found or import of one or more modules from PyQt5 has failed."
-    )
-    sys.exit(1)
+# import GUI libraries
+# try:
+from PySide6.QtCore import (
+    QThread,
+    QThreadPool,
+    QRunnable,
+    QObject,
+    Signal,
+    Slot,
+    QAbstractTableModel,
+    Qt,
+    QFile,
+    # QTextStream,# for text logging, disabled
+    QSettings,
+    QEvent,
+    QUrl,
+    QFileInfo,
+    QSize,
+    QTranslator,
+    QLocale,
+)
+from PySide6.QtGui import (
+    QColor,
+    QIcon,
+    QKeySequence,
+    #QPalette,
+    QFont,
+    QAction,
+    QPixmap,
+)
+from PySide6.QtWidgets import (
+    QMainWindow,
+    QDialog,
+    QLabel,
+    QComboBox,
+    QToolBar,
+    QWidget,
+    QTableWidgetItem,
+    QTextBrowser,
+    QListView,
+    QAbstractItemView,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QDialogButtonBox,
+    QMessageBox,
+    QFileDialog,
+    QFontDialog,
+    QApplication,
+    QSplashScreen,
+    # QDesktopWidget, # removed in Qt6
+    QProgressBar,
+    QHeaderView,
+    QItemDelegate,
+)
 
-from .ui import resources  # detected as false-positive in pyflakes
+# reading ui files
+# https://doc.qt.io/qtforpython-6/tutorials/basictutorial/uifiles.html#option-b-loading-it-directly
+from PySide6.QtUiTools import QUiLoader
 
-# For printing line number and file name
-from inspect import currentframe, getframeinfo
+# version of GUI library used
+from PySide6.QtCore import __version__ as GUI_VERSION_STR
+
+# core MoltenProt functions
+from moltenprot import core
+
+# widgets (also initializes QRC resources)
+from moltenprot.ui.main import Ui_MainWindow
+from moltenprot.ui.analysis import Ui_analysisDialog
+from moltenprot.ui.settings import Ui_moltenProtToolBoxDialog
+from moltenprot.ui.layout import Ui_layoutDialog
 
 cf = currentframe()
 cfFilename = getframeinfo(cf).filename
@@ -98,22 +121,14 @@ cfFilename = getframeinfo(cf).filename
 # check if core can do parallelization and set cpuCount
 if core.parallelization:
     from multiprocessing import cpu_count
-
     cpuCount = cpu_count()
 else:
     cpuCount = 1
 
-# for passing clicked button ID's
-from functools import partial
 
 showVersionInformation = False
 if showVersionInformation:
     core.showVersionInformation()
-    print("PyQt5            : {}".format(PYQT_VERSION_STR))
-
-# A cycler for color-safe 8-color palette from https://jfly.uni-koeln.de/color/
-from cycler import cycler
-import traceback
 
 # Color-safe 8-color palette from https://jfly.uni-koeln.de/color/
 colorsafe_cycler = cycler(
@@ -129,15 +144,38 @@ colorsafe_cycler = cycler(
     ]
 )
 
+# collect basic information to be presented in the About window
+mp_version = str(core.__version__)
+# check if running from PyInstaller bundle and add info to version
+if core.from_pyinstaller:
+    mp_version += " (PyInstaller bundle)"
+
+ABOUT_HTML =f"""<b>MoltenProt</b> v. {mp_version}
+        <p>Copyright &copy; 2018-2021,2025 Vadim Kotov, Thomas C. Marlovits
+        <p>A robust toolkit for assessment and optimization of protein (thermo)stability.
+        <p>Python {platform.python_version()} - PySide {GUI_VERSION_STR} - Matplotlib {matplotlib.__version__} on {platform.system()}"""
+
+def load_uic(infile: str, parent):
+    "Loads a UI file and attaches to the parent; for caveats between PyQt and PySide see https://www.pythonguis.com/faq/pyqt6-vs-pyside6/"
+    uifile = QFile(infile)
+    try:
+        uifile.open(QFile.ReadOnly)
+        return QUiLoader().load(uifile, parent)
+    finally:
+        uifile.close()
+
 
 class ExportThread(QThread):
-    exportThreadSignal = pyqtSignal(str)
+    'Customized threading'
+    exportThreadSignal = Signal(str)
 
     def __init__(self, parent=None):
+        'Initialize'
         QThread.__init__(self, parent)
         print(type(parent))
 
     def run(self):
+        'example run function'
         for i in range(1, 21):
             self.sleep(3)
             self.exportThreadSignal.emit("i = %s" % i)
@@ -151,22 +189,22 @@ class WorkerSignals(QObject):
 
     finished
         No data
-    
+
     error
         `tuple` (exctype, value, traceback.format_exc() )
-    
+
     result
         `object` data returned from processing, anything
 
     progress
-        `int` indicating % progress 
+        `int` indicating % progress
 
     """
 
-    finished = pyqtSignal()
-    error = pyqtSignal(tuple)
-    result = pyqtSignal(object)
-    progress = pyqtSignal(int)
+    finished = Signal()
+    error = Signal(tuple)
+    result = Signal(object)
+    progress = Signal(int)
 
 
 class ExportWorker(QRunnable):
@@ -175,7 +213,7 @@ class ExportWorker(QRunnable):
 
     Inherits from QRunnable to handler worker thread setup, signals and wrap-up.
 
-    :param callback: The function callback to run on this worker thread. Supplied args and 
+    :param callback: The function callback to run on this worker thread. Supplied args and
                      kwargs will be passed through to the runner.
     :type callback: function
     :param args: Arguments to pass to the callback function
@@ -184,18 +222,13 @@ class ExportWorker(QRunnable):
     """
 
     def __init__(self, *args, **kwargs):
-        super(ExportWorker, self).__init__()
-
-        # Store constructor arguments (re-used for processing)
-        # self.fn = fn
+        'initializes the instance'
+        super().__init__()
         self.args = args
         self.kwargs = kwargs
         self.signals = WorkerSignals()
 
-        # Add the callback to our kwargs
-        # self.kwargs["progress_callback"] = self.signals.progress
-
-    @pyqtSlot()
+    @Slot()
     def run(self):
         """
         Initialise the runner function with passed args, kwargs.
@@ -203,66 +236,38 @@ class ExportWorker(QRunnable):
 
         # Retrieve args/kwargs here; and fire processing using them
         try:
-            # result = self.fn(*self.args, **self.kwargs)
-            # print(type(self.args),  self.args)
-            # filename, xlsx, withReport, heatmaps, genpics, n_jobs
             moltenProtFitMultiple = self.args[0]
-            # filename = self.args[1]
-            # xlsx = self.args[2]
-            # withReport = self.args[3]
-            # heatmaps = self.args[3]
-            # genpics = self.args[4]
-            # n_jobs = self.args[5]
-            # report_choice = self.args[6]
             print("Running export thread", type(self.signals.progress))
             moltenProtFitMultiple.WriteOutputAll(**self.kwargs)
-            # No report done, follow the heatmaps/xlsx/genfigs settings
-            """
-            withReport = False
-            if report_choice == 2:
-                # HTML report
-                withReport = True
-            if report_choice == 1:
-                filename = os.path.join(filename, "Summary.xlsx")
-                # all filters and duplicate merging is skipped
-                moltenProtFitMultiple.CombineResults(filename, -1, -1, False)
-            else:
-                moltenProtFitMultiple.WriteOutputAll(
-                    outfolder=filename,
-                    xlsx=xlsx,
-                    report=withReport,
-                    heatmaps=heatmaps,
-                    genpics=genpics,
-                    n_jobs=n_jobs,
-                )
-            """
             self.signals.progress.emit(1)
         except:
             traceback.print_exc()
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))
-        # else:
-        # self.signals.result.emit(result)  # Return the result of the processing
         finally:
             self.signals.finished.emit()  # Done
 
 
-##  \brief This class implements Help Dialog of MoltenProt.
-#     \details Simpliest help system. Help information should be placed in subdirectory with name "help".
 class MoltenProtHelpDialog(QDialog):
-    ##  \brief MoltenProtHelpDialog constructor.
-    #     \details MoltenProtHelpDialog is created programmaticaly, not from ui file. Create simple text browser with two navgation buttons - Home and Back.
-    #                   Information about Html help files location should be placed in resources.qrc
-    #   <qresource>
-    #       <file alias="editmenu.html">help/editmenu.html</file>
-    #       <file alias="filemenu.html">help/filemenu.html</file>
-    #       <file alias="index.html">help/index.html</file>
-    #   </qresource>
-    #    \param page - Initial html page.
-    def __init__(self, page, parent=None):
-        super(MoltenProtHelpDialog, self).__init__(parent)
-        # self.setAttribute(Qt.WA_DeleteOnClose)
-        self.setAttribute(Qt.WA_GroupLeader)
+    r"""
+    ##  \brief This class implements Help Dialog of MoltenProt.
+    #     \details Simpliest help system. Help information should be placed in subdirectory with name "help".
+
+    """
+
+    def __init__(self, parent=None):
+        r"""
+        ##  \brief MoltenProtHelpDialog constructor.
+        #     \details MoltenProtHelpDialog is created programmaticaly, not from ui file. Create simple text browser with two navgation buttons - Home and Back.
+        #                   Information about Html help files location should be placed in resources.qrc
+        #   <qresource>
+        #       <file alias="editmenu.html">help/editmenu.html</file>
+        #       <file alias="filemenu.html">help/filemenu.html</file>
+        #       <file alias="index.html">help/index.html</file>
+        #   </qresource>
+        #    \param page - Initial html page.
+        """
+        super().__init__(parent)
         self.setWindowTitle("MoltenProt Help")
 
         backAction = QAction(QIcon(":/back.svgz"), self.tr("&Back"), self)
@@ -293,44 +298,41 @@ class MoltenProtHelpDialog(QDialog):
         self.textBrowser.sourceChanged.connect(self.updatePageTitle)
 
         self.textBrowser.setSearchPaths([":/"])
-        self.textBrowser.setSource(QUrl(page))
+        # explicitly searching in QRC https://forum.qt.io/topic/106828/
+        self.textBrowser.setSource(QUrl("qrc:/index.html"))
         self.resize(400, 600)
 
-    ##  \brief  Show page title according to selected help item.
     def updatePageTitle(self):
+        r'##  \brief  Show page title according to selected help item.'
         self.pageLabel.setText(self.textBrowser.documentTitle())
 
 
-# from ui_layout import Ui_layoutDialog
-##  \brief This class implements Layout Dialog of MoltenProt.
-#     \details Dialog description is located in layout-designer.ui file. This file can be edited in Qt designer. The following command should be issued after editing layout-designer.ui file :
-#   - pyside-uic -o ui_layout.py      layout_designer.ui
-class LayoutDialog(QDialog):
-    def __init__(self):
-        QDialog.__init__(self)
+class LayoutDialog(QDialog, Ui_layoutDialog):
+    r"""
+                ##  \brief This class implements Layout Dialog of MoltenProt.
+    #     \details Dialog description is located in layout-designer.ui file. This file can be edited in Qt designer. The following command should be issued after editing layout-designer.ui file :
+    #   - pyside-uic -o ui_layout.py      layout_designer.ui
 
-        # self.ui = Ui_layoutDialog()
-        # self.ui.setupUi(self)
-        uifile = QFile(":/layout.ui")
-        uifile.open(QFile.ReadOnly)
-        self.ui = uic.loadUi(uifile, self)
-        uifile.close()
+    """
+
+    def __init__(self):
+        'create an instance'
+        super().__init__()
+        self.setupUi(self)
         # Method myAccept will be called when user pressed Ok button
-        self.ui.buttonBox.accepted.connect(self.myAccept)
-        # Method myReject will be called when user pressed Ok button
-        self.ui.buttonBox.rejected.connect(self.myReject)
+        self.buttonBox.accepted.connect(self.myAccept)
+        # Method myReject will be called when user pressed Cancel button
+        self.buttonBox.rejected.connect(self.myReject)
         self.setContextMenuPolicy(Qt.ActionsContextMenu)
 
         blankAction = QAction("Blank", self)
         blankAction.triggered.connect(self.on_blankAction)
         self.addAction(blankAction)
 
-        """
-        #NOTE not implemented in main module, currently disabled
-        referenceAction = QAction("Reference", self)
-        referenceAction.triggered.connect(self.on_refAction)
-        self.addAction(referenceAction)
-        """
+        # NOTE not implemented in main module, currently disabled
+        #referenceAction = QAction("Reference", self)
+        #referenceAction.triggered.connect(self.on_refAction)
+        #self.addAction(referenceAction)
 
         ignoreAction = QAction("Ignore", self)
         ignoreAction.triggered.connect(self.on_ignoreAction)
@@ -340,381 +342,374 @@ class LayoutDialog(QDialog):
         clearSelectedAction.triggered.connect(self.on_clearSelectedAction)
         self.addAction(clearSelectedAction)
 
-    @pyqtSlot()
+    @Slot()
     def on_blankAction(self):
-        for currentQTableWidgetItem in self.ui.tableWidget.selectedItems():
+        'set text in selected cells to Blank'
+        for currentQTableWidgetItem in self.tableWidget.selectedItems():
             currentQTableWidgetItem.setText("Blank")
 
-    @pyqtSlot()
+    @Slot()
     def on_refAction(self):
-        for currentQTableWidgetItem in self.ui.tableWidget.selectedItems():
+        'set text in selected cells to Reference - TODO'
+        for currentQTableWidgetItem in self.tableWidget.selectedItems():
             currentQTableWidgetItem.setText("Reference")
 
-    @pyqtSlot()
+    @Slot()
     def on_ignoreAction(self):
-        for currentQTableWidgetItem in self.ui.tableWidget.selectedItems():
+        'set text in selected cells to Ignore'
+        for currentQTableWidgetItem in self.tableWidget.selectedItems():
             currentQTableWidgetItem.setText("Ignore")
-
+    
+    @Slot()
     def on_clearSelectedAction(self):
-        for currentQTableWidgetItem in self.ui.tableWidget.selectedItems():
+        'clear text in selected cells'
+        for currentQTableWidgetItem in self.tableWidget.selectedItems():
             currentQTableWidgetItem.setText("")
 
-    @pyqtSlot()
+    @Slot()
     def myAccept(self):
+        'when dialog accepted'
         if showVersionInformation:
             print("myAccept")
         # Hide dialog
         self.close()
 
     def myReject(self):
+        'when dialog rejected'
         if showVersionInformation:
             print("myReject")
         # Hide dialog
         self.close()
 
 
-##  \brief This class implements export/import and the other settings toolbox dialog of MoltenProt.
-class MoltenProtToolBox(QDialog):
+class moltenProtToolBox(QDialog, Ui_moltenProtToolBoxDialog):
+    r"##  \brief This class implements export/import and the other settings toolbox dialog of MoltenProt."
+
     def __init__(self, parent=None):
-        super(MoltenProtToolBox, self).__init__(parent)
+        'Initialize the object and connect callbacks'
+        super().__init__(parent)
         if parent == None:
             print("parent == None", cfFilename, currentframe().f_lineno)
         self.parent = parent
-        uifile = QFile(":/settings.ui")
-        uifile.open(QFile.ReadOnly)
-        self.ui = uic.loadUi(uifile, self)
-        uifile.close()
-        self.ui.buttonBox.accepted.connect(self.myAccept)
-        self.ui.buttonBox.rejected.connect(self.myReject)
-        self.ui.buttonBox.clicked["QAbstractButton*"].connect(self.buttonClicked)
-        self.ui.parallelSpinBox.setMaximum(cpuCount - 1)
+        self.setupUi(self)
+        self.buttonBox.accepted.connect(self.myAccept)
+        self.buttonBox.rejected.connect(self.myReject)
+        self.buttonBox.clicked["QAbstractButton*"].connect(self.buttonClicked)
+        self.parallelSpinBox.setMaximum(cpuCount - 1)
         self.settings = QSettings()
         self.restoreSettingsValues()
 
-    # @pyqtSlot()
+    # @Slot()
     def buttonClicked(self, button):
-        # print("buttonClicked")
+        'when a button was clicked'
         role = self.buttonBox.buttonRole(button)
         if role == QDialogButtonBox.ResetRole:
             self.resetToDefaults()
 
-    @pyqtSlot()
+    @Slot()
     def myAccept(self):
+        'when dialog accepted'
         self.settings.setValue(
             "toolbox/importSettingsPage/separatorInputText",
-            self.ui.separatorInput.text(),
+            self.separatorInput.text(),
         )
         self.settings.setValue(
             "toolbox/importSettingsPage/decimalSeparatorInputText",
-            self.ui.decimalSeparatorInput.text(),
+            self.decimalSeparatorInput.text(),
         )
         self.settings.setValue(
             "toolbox/importSettingsPage/denaturantComboBoxIndex",
-            self.ui.denaturantComboBox.currentIndex(),
+            self.denaturantComboBox.currentIndex(),
         )
         self.settings.setValue(
             "toolbox/importSettingsPage/scanRateSpinBoxValue",
-            self.ui.scanRateSpinBox.value(),
+            self.scanRateSpinBox.value(),
         )
 
         self.settings.setValue(
             "toolbox/importSettingsPage/spectrumCsvCheckBox",
-            int(self.ui.spectrumCsvCheckBox.isChecked()),
+            int(self.spectrumCsvCheckBox.isChecked()),
         )
 
         self.settings.setValue(
             "toolbox/importSettingsPage/refoldingCheckBox",
-            int(self.ui.refoldingCheckBox.isChecked()),
+            int(self.refoldingCheckBox.isChecked()),
         )
 
         self.settings.setValue(
             "toolbox/importSettingsPage/rawCheckBox",
-            int(self.ui.rawCheckBox.isChecked()),
+            int(self.rawCheckBox.isChecked()),
         )
-        
+
         self.settings.setValue(
             "toolbox/importSettingsPage/pantaCheckBox",
-            int(self.ui.pantaCheckBox.isChecked()),
+            int(self.pantaCheckBox.isChecked()),
         )
 
         self.settings.setValue(
             "toolbox/exportSettingsPage/outputFormatComboBoxIndex",
-            self.ui.outputFormatComboBox.currentIndex(),
+            self.outputFormatComboBox.currentIndex(),
         )
         self.settings.setValue(
             "toolbox/exportSettingsPage/outputReportComboBoxIndex",
-            self.ui.outputReportComboBox.currentIndex(),
+            self.outputReportComboBox.currentIndex(),
         )
-        # self.settings.setValue(
-        #    "toolbox/exportSettingsPage/genpicsCheckBox",
-        #    int(self.ui.genpicsCheckBox.isChecked()),
-        # )
-        # self.settings.setValue(
-        #    "toolbox/exportSettingsPage/heatmapCheckBox",
-        #    int(self.ui.heatmapCheckBox.isChecked()),
-        # )
 
         self.settings.setValue(
-            "toolbox/miscSettingsPage/parallelSpinBox", self.ui.parallelSpinBox.value()
+            "toolbox/miscSettingsPage/parallelSpinBox", self.parallelSpinBox.value()
         )
         self.settings.setValue(
             "toolbox/miscSettingsPage/colormapForPlotComboBoxIndex",
-            self.ui.colormapForPlotComboBox.currentIndex(),
+            self.colormapForPlotComboBox.currentIndex(),
         )
 
         self.settings.setValue(
             "toolbox/plotSettingsPage/curveVlinesCheckBox",
-            int(self.ui.curveVlinesCheckBox.isChecked()),
+            int(self.curveVlinesCheckBox.isChecked()),
         )
         self.settings.setValue(
             "toolbox/plotSettingsPage/curveBaselineCheckBox",
-            int(self.ui.curveBaselineCheckBox.isChecked()),
+            int(self.curveBaselineCheckBox.isChecked()),
         )
         self.settings.setValue(
             "toolbox/plotSettingsPage/curveDerivativeCheckBox",
-            int(self.ui.curveDerivativeCheckBox.isChecked()),
+            int(self.curveDerivativeCheckBox.isChecked()),
         )
 
         self.settings.setValue(
             "toolbox/plotSettingsPage/curveHeatmapColorCheckBox",
-            int(self.ui.curveHeatmapColorCheckBox.isChecked()),
+            int(self.curveHeatmapColorCheckBox.isChecked()),
         )
 
-        # self.settings.setValue(
-        #    "toolbox/plotSettingsPage/curveLegendCheckBox",
-        #    int(self.ui.curveLegendCheckBox.isChecked()),
-        # )
         self.settings.setValue(
             "toolbox/plotSettingsPage/curveLegendComboBox",
-            self.ui.curveLegendComboBox.currentIndex(),
+            self.curveLegendComboBox.currentIndex(),
         )
         self.settings.setValue(
             "toolbox/plotSettingsPage/curveMarkEverySpinBoxValue",
-            self.ui.curveMarkEverySpinBox.value(),
+            self.curveMarkEverySpinBox.value(),
         )
         self.settings.setValue(
             "toolbox/plotSettingsPage/curveTypeComboboxIndex",
-            self.ui.curveTypeComboBox.currentIndex(),
+            self.curveTypeComboBox.currentIndex(),
         )
         self.settings.setValue(
             "toolbox/plotSettingsPage/curveViewComboboxIndex",
-            self.ui.curveViewComboBox.currentIndex(),
+            self.curveViewComboBox.currentIndex(),
         )
 
         self.close()
 
-    @pyqtSlot()
+    @Slot()
     def myReject(self):
+        'when dialog rejected'
         self.restoreSettingsValues()
         self.close()
 
     def restoreSettingsValues(self):
+        'restores values of settings'
         index = int(
             self.settings.value("toolbox/importSettingsPage/denaturantComboBoxIndex", 0)
         )
-        self.ui.denaturantComboBox.setCurrentIndex(index)
+        self.denaturantComboBox.setCurrentIndex(index)
         text = self.settings.value("toolbox/importSettingsPage/separatorInputText", ",")
-        self.ui.separatorInput.setText(text)
+        self.separatorInput.setText(text)
         text = self.settings.value(
             "toolbox/importSettingsPage/decimalSeparatorInputText", "."
         )
-        self.ui.decimalSeparatorInput.setText(text)
+        self.decimalSeparatorInput.setText(text)
         value = float(
             self.settings.value("toolbox/importSettingsPage/scanRateSpinBoxValue", 1.0)
         )
-        self.ui.scanRateSpinBox.setValue(value)
+        self.scanRateSpinBox.setValue(value)
         isChecked = int(
             self.settings.value("toolbox/importSettingsPage/refoldingCheckBox", 0)
         )
-        self.ui.refoldingCheckBox.setChecked(isChecked)
+        self.refoldingCheckBox.setChecked(isChecked)
         isChecked = int(
             self.settings.value("toolbox/importSettingsPage/rawCheckBox", 0)
         )
-        self.ui.rawCheckBox.setChecked(isChecked)
-        
+        self.rawCheckBox.setChecked(isChecked)
+
         isChecked = int(
             self.settings.value("toolbox/importSettingsPage/pantaCheckBox", 0)
         )
-        self.ui.pantaCheckBox.setChecked(isChecked)
+        self.pantaCheckBox.setChecked(isChecked)
 
         isChecked = int(
             self.settings.value("toolbox/importSettingsPage/spectrumCsvCheckBox", 0)
         )
-        self.ui.spectrumCsvCheckBox.setChecked(isChecked)
+        self.spectrumCsvCheckBox.setChecked(isChecked)
 
         value = int(self.settings.value("toolbox/miscSettingsPage/parallelSpinBox", 1))
-        self.ui.parallelSpinBox.setValue(value)
+        self.parallelSpinBox.setValue(value)
         index = int(
             self.settings.value(
                 "toolbox/miscSettingsPage/colormapForPlotComboBoxIndex", 0
             )
         )
-        self.ui.colormapForPlotComboBox.setCurrentIndex(index)
+        self.colormapForPlotComboBox.setCurrentIndex(index)
 
         index = int(
             self.settings.value(
                 "toolbox/exportSettingsPage/outputFormatComboBoxIndex", 0
             )
         )
-        self.ui.outputFormatComboBox.setCurrentIndex(index)
+        self.outputFormatComboBox.setCurrentIndex(index)
         index = int(
             self.settings.value(
                 "toolbox/exportSettingsPage/outputReportComboBoxIndex", 0
             )
         )
-        self.ui.outputReportComboBox.setCurrentIndex(index)
-        # isChecked = int(
-        #    self.settings.value("toolbox/exportSettingsPage/genpicsCheckBox", 0)
-        # )
-        # self.ui.genpicsCheckBox.setChecked(isChecked)
-        # isChecked = int(
-        #    self.settings.value("toolbox/exportSettingsPage/heatmapCheckBox", 0)
-        # )
-        # self.ui.heatmapCheckBox.setChecked(isChecked)
+        self.outputReportComboBox.setCurrentIndex(index)
 
         isChecked = int(
             self.settings.value("toolbox/plotSettingsPage/curveVlinesCheckBox", 0)
         )
-        self.ui.curveVlinesCheckBox.setChecked(isChecked)
+        self.curveVlinesCheckBox.setChecked(isChecked)
         isChecked = int(
             self.settings.value("toolbox/plotSettingsPage/curveBaselineCheckBox", 0)
         )
-        self.ui.curveBaselineCheckBox.setChecked(isChecked)
+        self.curveBaselineCheckBox.setChecked(isChecked)
         isChecked = int(
             self.settings.value("toolbox/plotSettingsPage/curveHeatmapColorCheckBox", 0)
         )
-        self.ui.curveHeatmapColorCheckBox.setChecked(isChecked)
+        self.curveHeatmapColorCheckBox.setChecked(isChecked)
 
         isChecked = int(
             self.settings.value("toolbox/plotSettingsPage/curveDerivativeCheckBox", 0)
         )
-        self.ui.curveDerivativeCheckBox.setChecked(isChecked)
-        # isChecked = int(
-        # self.settings.value("toolbox/plotSettingsPage/curveLegendCheckBox", 0)
-        # )
-        # self.ui.curveLegendCheckBox.setChecked(isChecked)
+        self.curveDerivativeCheckBox.setChecked(isChecked)
+
         index = int(
             self.settings.value("toolbox/plotSettingsPage/curveLegendComboBox", 0)
         )
-        self.ui.curveLegendComboBox.setCurrentIndex(index)
+        self.curveLegendComboBox.setCurrentIndex(index)
 
         value = int(
             self.settings.value(
                 "toolbox/plotSettingsPage/curveMarkEverySpinBoxValue", 0
             )
         )
-        self.ui.curveMarkEverySpinBox.setValue(value)
+        self.curveMarkEverySpinBox.setValue(value)
 
         index = int(
             self.settings.value("toolbox/exportSettingsPage/curveTypeComboboxIndex", 0)
         )
-        self.ui.curveTypeComboBox.setCurrentIndex(index)
+        self.curveTypeComboBox.setCurrentIndex(index)
         index = int(
             self.settings.value("toolbox/exportSettingsPage/curveViewComboboxIndex", 0)
         )
-        self.ui.curveViewComboBox.setCurrentIndex(index)
+        self.curveViewComboBox.setCurrentIndex(index)
 
     def resetToDefaults(self):
-        # print("resetToDefaults")
+        'resets values to defaults'
         index = 0  # int(self.settings.value('toolbox/importSettingsPage/denaturantComboBoxIndex',  0))
-        self.ui.denaturantComboBox.setCurrentIndex(index)
+        self.denaturantComboBox.setCurrentIndex(index)
 
         text = core.defaults[
             "sep"
         ]  # self.settings.value('toolbox/importSettingsPage/separatorInputText',  ',')
-        self.ui.separatorInput.setText(text)
+        self.separatorInput.setText(text)
 
         text = core.defaults[
             "dec"
         ]  # self.settings.value('toolbox/importSettingsPage/decimalSeparatorInputText',  '.')
-        self.ui.decimalSeparatorInput.setText(text)
+        self.decimalSeparatorInput.setText(text)
 
         value = 1.0  # float(self.settings.value('toolbox/importSettingsPage/scanRateSpinBoxValue',  1.0))
-        self.ui.scanRateSpinBox.setValue(value)
+        self.scanRateSpinBox.setValue(value)
 
         isChecked = 0
-        self.ui.spectrumCsvCheckBox.setChecked(isChecked)
+        self.spectrumCsvCheckBox.setChecked(isChecked)
 
         isChecked = 0  # int(self.settings.value('toolbox/importSettingsPage/refoldingCheckBox',  0))
-        self.ui.refoldingCheckBox.setChecked(isChecked)
+        self.refoldingCheckBox.setChecked(isChecked)
 
         isChecked = 0
-        self.ui.rawCheckBox.setChecked(isChecked)
+        self.rawCheckBox.setChecked(isChecked)
 
         isChecked = 0
-        self.ui.pantaCheckBox.setChecked(isChecked)
+        self.pantaCheckBox.setChecked(isChecked)
 
         value = 1  # int(self.settings.value('toolbox/miscSettingsPage/parallelSpinBox',  1))
-        self.ui.parallelSpinBox.setValue(value)
+        self.parallelSpinBox.setValue(value)
         index = 0  # int(self.settings.value('toolbox/miscSettingsPage/colormapForPlotComboBoxIndex',  0))
-        self.ui.colormapForPlotComboBox.setCurrentIndex(index)
+        self.colormapForPlotComboBox.setCurrentIndex(index)
 
         index = 0  # int(self.settings.value('toolbox/exportSettingsPage/outputFormatComboBoxIndex',  0))
-        self.ui.outputFormatComboBox.setCurrentIndex(index)
+        self.outputFormatComboBox.setCurrentIndex(index)
         index = 0  # int(self.settings.value('toolbox/exportSettingsPage/outputReportComboBoxIndex',  0))
-        self.ui.outputReportComboBox.setCurrentIndex(index)
+        self.outputReportComboBox.setCurrentIndex(index)
         # isChecked = 0  # int(self.settings.value('toolbox/exportSettingsPage/genpicsCheckBox',  0))
-        # self.ui.genpicsCheckBox.setChecked(isChecked)
+        # self.genpicsCheckBox.setChecked(isChecked)
         # isChecked = 0  # int(self.settings.value('toolbox/exportSettingsPage/heatmapCheckBox',  0))
-        # self.ui.heatmapCheckBox.setChecked(isChecked)
+        # self.heatmapCheckBox.setChecked(isChecked)
 
         isChecked = 0  # int(self.settings.value('toolbox/plotSettingsPage/curveVlinesCheckBox',  0))
-        self.ui.curveVlinesCheckBox.setChecked(isChecked)
+        self.curveVlinesCheckBox.setChecked(isChecked)
         isChecked = 0  # int(self.settings.value('toolbox/plotSettingsPage/curveBaselineCheckBox',  0))
-        self.ui.curveBaselineCheckBox.setChecked(isChecked)
+        self.curveBaselineCheckBox.setChecked(isChecked)
         isChecked = 0  # int(self.settings.value('toolbox/plotSettingsPage/curveDerivativeCheckBox',  0))
-        self.ui.curveDerivativeCheckBox.setChecked(isChecked)
+        self.curveDerivativeCheckBox.setChecked(isChecked)
         # isChecked = 0  # int(self.settings.value('toolbox/plotSettingsPage/curveLegendCheckBox',  0))
-        # self.ui.curveLegendCheckBox.setChecked(isChecked)
+        # self.curveLegendCheckBox.setChecked(isChecked)
         isChecked = 0
-        self.ui.curveHeatmapColorCheckBox.setChecked(isChecked)
+        self.curveHeatmapColorCheckBox.setChecked(isChecked)
 
         index = 0
-        self.ui.curveLegendComboBox.setCurrentIndex(index)
+        self.curveLegendComboBox.setCurrentIndex(index)
         value = 0  # int(self.settings.value('toolbox/plotSettingsPage/curveMarkEverySpinBoxValue',  0))
-        self.ui.curveMarkEverySpinBox.setValue(value)
-        if self.parent != None:
+        self.curveMarkEverySpinBox.setValue(value)
+        if self.parent is not None:
             self.parent.getPlotSettings()
             self.parent.manageSubplots()
 
         index = 0  # int(self.settings.value('toolbox/exportSettingsPage/curveTypeComboboxIndex',  0))
-        self.ui.curveTypeComboBox.setCurrentIndex(index)
+        self.curveTypeComboBox.setCurrentIndex(index)
         index = 0  # int(self.settings.value('toolbox/exportSettingsPage/curveViewComboboxIndex',  0))
-        self.ui.curveViewComboBox.setCurrentIndex(index)
+        self.curveViewComboBox.setCurrentIndex(index)
 
 
 class TableModel(QAbstractTableModel):
     def __init__(self, data):
-        super(TableModel, self).__init__()
+        'creates an instance and assigns data'
+        super().__init__()
         self._data = data
 
     def data(self, index, role):
+        'fetches the data'
         if role == Qt.DisplayRole:
             value = self._data.iloc[index.row(), index.column()]
             return str(value)
+        return None
 
     def rowCount(self, index):
+        'retrieves the row count'
         return self._data.shape[0]
 
     def columnCount(self, index):
+        'retrieves the column count'
         return self._data.shape[1]
 
     def headerData(self, section, orientation, role):
+        'handles the header'
         # section is the index of the column/row.
         if role == Qt.DisplayRole:
             if orientation == Qt.Horizontal:
                 return str(self._data.columns[section])
-
             if orientation == Qt.Vertical:
                 return str(self._data.index[section])
+        return None
 
     def flags(self, index):
+        'returns an item flag based on index'
         if index.column() == 1:
             return Qt.ItemIsEditable | Qt.ItemIsEnabled
-        else:
-            return Qt.ItemIsEnabled
+        return Qt.ItemIsEnabled
 
     def setData(self, index, value, role=Qt.DisplayRole):
+        'sets the data'
         self._data.iloc[index.row(), index.column()] = value
 
 
@@ -724,202 +719,256 @@ class ComboDelegate(QItemDelegate):
     cell of the column to which it's applied
     """
 
-    def __init__(self, parent, items=[]):
-        QItemDelegate.__init__(self, parent)
+    def __init__(self, parent, items=None):
+        'creates the object'
+        super().__init__(parent)
+        if items is None:
+            items = []
         self.li = items
 
     def createEditor(self, parent, option, index):
+        "creates a combobox"
         combo = QComboBox(parent)
         combo.addItems(self.li)
         combo.currentIndexChanged.connect(self.currentIndexChanged)
         return combo
 
     def setEditorData(self, editor, index):
+        "sets editor data"
         editor.blockSignals(True)
-        # editor.setCurrentIndex(int(index.model().data(index)))
         editor.blockSignals(False)
 
     def setModelData(self, editor, model, index):
+        "sets data in the model"
         model.setData(index, editor.currentText())
 
     def currentIndexChanged(self):
+        "actions when index changes"
         self.commitData.emit(self.sender())
 
 
-##  \brief This class implements AnalysisDialog of MoltenProt.
-#     \details
-class AnalysisDialog(QDialog):
-    ##  \brief AnalysisDialog constructor.
+class AnalysisDialog(QDialog, Ui_analysisDialog):
+    r"""
+        ##  \brief This class implements AnalysisDialog of MoltenProt.
+    #     \details
+
+    """
+
     def __init__(self, parent=None):
-        # QDialog.__init__(self)
-        super(AnalysisDialog, self).__init__(parent)
-        if parent == None:
+        r"##  \brief AnalysisDialog constructor."
+        super().__init__(parent)
+        if parent is None:
             print("parent == None", cfFilename, currentframe().f_lineno)
         self.parent = parent
-        uifile = QFile(":/analysis.ui")
-        uifile.open(QFile.ReadOnly)
-        self.ui = uic.loadUi(uifile, self)
-        uifile.close()
-        self.ui.buttonBox.accepted.connect(self.myAccept)
-        self.ui.buttonBox.rejected.connect(self.myReject)
-        self.ui.medianFilterCheckBox.clicked.connect(
-            self.on_medianFilterCheckBoxChecked
-        )
-        self.ui.shrinkCheckBox.clicked.connect(self.on_shrinkCheckBoxChecked)
-        self.ui.buttonBox.clicked["QAbstractButton*"].connect(self.buttonClicked)
+        # self = load_uic(":/analysis.ui", self)
+        self.setupUi(self)
+        self.buttonBox.accepted.connect(self.myAccept)
+        self.buttonBox.rejected.connect(self.myReject)
+        self.medianFilterCheckBox.clicked.connect(self.on_medianFilterCheckBoxChecked)
+        self.shrinkCheckBox.clicked.connect(self.on_shrinkCheckBoxChecked)
+        self.buttonBox.clicked["QAbstractButton*"].connect(self.buttonClicked)
 
-        self.ui.filterWindowSizeLabel.hide()
-        self.ui.shrinkNewdTValueLabel.hide()
+        self.filterWindowSizeLabel.hide()
+        self.shrinkNewdTValueLabel.hide()
         self.settings = QSettings()
         self.restoreSettingsValues()
 
-        self.ui.analysisTableView.horizontalHeader().setSectionResizeMode(
+        self.analysisTableView.horizontalHeader().setSectionResizeMode(
             QHeaderView.Stretch
         )
 
-    @pyqtSlot()
+    @Slot()
     def myAccept(self):
+        "when dialog accepted"
         self.settings.setValue(
-            "analysisSettings/dCpSpinBoxValue", self.ui.dCpSpinBox.value()
+            "analysisSettings/dCpSpinBoxValue", self.dCpSpinBox.value()
         )
         self.settings.setValue(
             "analysisSettings/medianFilterCheckBox",
-            int(self.ui.medianFilterCheckBox.isChecked()),
+            int(self.medianFilterCheckBox.isChecked()),
         )
         self.settings.setValue(
-            "analysisSettings/medianFilterSpinBox", self.ui.medianFilterSpinBox.value()
+            "analysisSettings/medianFilterSpinBox", self.medianFilterSpinBox.value()
         )
         self.settings.setValue(
-            "analysisSettings/shrinkCheckBox", int(self.ui.shrinkCheckBox.isChecked())
+            "analysisSettings/shrinkCheckBox", int(self.shrinkCheckBox.isChecked())
         )
         self.settings.setValue(
-            "analysisSettings/shrinkDoubleSpinBox", self.ui.shrinkDoubleSpinBox.value()
+            "analysisSettings/shrinkDoubleSpinBox", self.shrinkDoubleSpinBox.value()
         )
         self.close()
 
-    @pyqtSlot()
+    @Slot()
     def myReject(self):
+        "when dialog rejected"
         self.restoreSettingsValues()
         self.close()
 
     def buttonClicked(self, button):
+        "when button is clicked"
         role = self.buttonBox.buttonRole(button)
         if role == QDialogButtonBox.ResetRole:
             self.resetToDefaults()
 
     def resetToDefaults(self):
-        # print("self.resetToDefaults()")
-        # default analysis approach - this is the first one in the list of available models
-        # index = 0
+        "Load default analysis settings"
         # default dCp value
-        value = core.analysis_defaults["dCp"]
-        self.ui.dCpSpinBox.setValue(value)
+        self.dCpSpinBox.setValue(core.analysis_defaults["dCp"])
         # median filter - disabled by default, but set the default value in the spinbox
-        self.ui.medianFilterCheckBox.setChecked(False)
+        self.medianFilterCheckBox.setChecked(False)
         value = 5
-        self.ui.medianFilterSpinBox.setValue(value)
+        self.medianFilterSpinBox.setValue(value)
         self.on_medianFilterCheckBoxChecked()
         # shrinking - the same as with mfilt, good starting value is 1
-        self.ui.shrinkCheckBox.setChecked(False)
+        self.shrinkCheckBox.setChecked(False)
         value = 1.0
-        self.ui.shrinkDoubleSpinBox.setValue(value)
+        self.shrinkDoubleSpinBox.setValue(value)
         self.on_shrinkCheckBoxChecked()
         # trimming - no trimming
-        self.ui.tempRangeMinSpinBox.setValue(core.prep_defaults["trim_min"])
-        self.ui.tempRangeMaxSpinBox.setValue(core.prep_defaults["trim_max"])
+        self.tempRangeMinSpinBox.setValue(core.prep_defaults["trim_min"])
+        self.tempRangeMaxSpinBox.setValue(core.prep_defaults["trim_max"])
         # savgol, baselines, baseline bounds
-        self.ui.savgolSpinBox.setValue(core.analysis_defaults["savgol"])
-        self.ui.baselineFitSpinBox.setValue(core.analysis_defaults["baseline_fit"])
-        self.ui.baselineBoundsSpinbox.setValue(
-            core.analysis_defaults["baseline_bounds"]
-        )
+        self.savgolSpinBox.setValue(core.analysis_defaults["savgol"])
+        self.baselineFitSpinBox.setValue(core.analysis_defaults["baseline_fit"])
+        self.baselineBoundsSpinbox.setValue(core.analysis_defaults["baseline_bounds"])
         # prepare the analysis table view
-        if self.parent != None:
+        if self.parent is not None:
             self.parent.prepareAnalysisTableView()
 
     def setCheckBox(self, checkBoxSettingValue, checkBox):
+        "Handles values to be set for checkboxes"
         value = self.settings.value(checkBoxSettingValue)
-        if value == None:
+        if value is None:
             value = False
         else:
             value = int(value)
-        if value == 1:
-            value = True
-        else:
-            value = False
-        checkBox.setChecked(value)
+        checkBox.setChecked(value == 1)
 
     def restoreSettingsValues(self):
+        "restores values of settings"
         value = int(self.settings.value("analysisSettings/dCpSpinBoxValue", 0))
-        self.ui.dCpSpinBox.setValue(value)
+        self.dCpSpinBox.setValue(value)
 
         self.setCheckBox(
-            "analysisSettings/medianFilterCheckBox", self.ui.medianFilterCheckBox
+            "analysisSettings/medianFilterCheckBox", self.medianFilterCheckBox
         )
         value = self.settings.value("analysisSettings/medianFilterSpinBox", 5)
         value = int(value)
-        self.ui.medianFilterSpinBox.setValue(value)
+        self.medianFilterSpinBox.setValue(value)
         self.on_medianFilterCheckBoxChecked()
 
-        self.setCheckBox("analysisSettings/shrinkCheckBox", self.ui.shrinkCheckBox)
+        self.setCheckBox("analysisSettings/shrinkCheckBox", self.shrinkCheckBox)
         value = self.settings.value("analysisSettings/shrinkDoubleSpinBox", 5)
         value = float(value)
-        self.ui.shrinkDoubleSpinBox.setValue(value)
+        self.shrinkDoubleSpinBox.setValue(value)
         self.on_shrinkCheckBoxChecked()
 
-    ##  \brief Show/hide medianFilterSpinBox,filterWindowSizeLabel  GUI elements according to medianFilterCheckBox state.
-    @pyqtSlot()
+    @Slot()
     def on_medianFilterCheckBoxChecked(self):
-        if self.ui.medianFilterCheckBox.isChecked():
-            self.ui.medianFilterSpinBox.show()
-            self.ui.filterWindowSizeLabel.show()
+        r'##  \brief Show/hide medianFilterSpinBox,filterWindowSizeLabel  GUI elements according to medianFilterCheckBox state.'
+        if self.medianFilterCheckBox.isChecked():
+            self.medianFilterSpinBox.show()
+            self.filterWindowSizeLabel.show()
         else:
-            self.ui.medianFilterSpinBox.hide()
-            self.ui.filterWindowSizeLabel.hide()
+            self.medianFilterSpinBox.hide()
+            self.filterWindowSizeLabel.hide()
 
-    ##  \brief Show/hide snrDoubleSpinBox GUI element according to snrCheckBoxChecked state.
-    @pyqtSlot()
+    @Slot()
     def on_snrCheckBoxChecked(self):
-        if self.ui.snrCheckBox.isChecked():
-            self.ui.snrDoubleSpinBox.show()
+        r'##  \brief Show/hide snrDoubleSpinBox GUI element according to snrCheckBoxChecked state.'
+        if self.snrCheckBox.isChecked():
+            self.snrDoubleSpinBox.show()
         else:
-            self.ui.snrDoubleSpinBox.hide()
+            self.snrDoubleSpinBox.hide()
 
-    ##  \brief Show/hide shrinkDoubleSpinBox,shrinkNewdTValueLabel  GUI elements according to shrinkCheckBox state.
-    @pyqtSlot()
+    @Slot()
     def on_shrinkCheckBoxChecked(self):
-        if self.ui.shrinkCheckBox.isChecked():
-            self.ui.shrinkDoubleSpinBox.show()
-            self.ui.shrinkNewdTValueLabel.show()
+        r"    ##  \brief Show/hide shrinkDoubleSpinBox,shrinkNewdTValueLabel  GUI elements according to shrinkCheckBox state."
+        if self.shrinkCheckBox.isChecked():
+            self.shrinkDoubleSpinBox.show()
+            self.shrinkNewdTValueLabel.show()
         else:
-            self.ui.shrinkDoubleSpinBox.hide()
-            self.ui.shrinkNewdTValueLabel.hide()
+            self.shrinkDoubleSpinBox.hide()
+            self.shrinkNewdTValueLabel.hide()
 
 
-##  \brief This class implements QMainWindow of MoltenProt.
-#     \details
-class MoltenProtMainWindow(QMainWindow):
+class MoltenProtMainWindow(QMainWindow, Ui_MainWindow):
+    """
+    Defines the main window of the GUI
+
+    Notes
+    -----
+    * in the past a simpler UI loading approach could be used a provided by PyQt, with PySide one needs to convert the UIC files to PY and then use in multiple inheritance, see also: https://www.pythonguis.com/faq/pyqt6-vs-pyside6/
+
+    """
+
     NextId = 1
     Instances = set()
-    ##  \brief MoltenProtMainWindow constructor.
+
+    def __init__(self, filename=None, parent=None):
+        r"""
+        ##  \brief MoltenProtMainWindow constructor.
     #     \details
     #   - Set analysis defaults. \sa setAnalysisDefaults
     #   - Init class members.
     #   - Parse application arguments. \sa parseArgs
     #   - Read settings.
     #   - Create standard GUI elements of QMainWindow for MoltenProt application and set their visibility. \sa createMainWindow createStatusBar initDialogs.
-    def __init__(self, filename=None, parent=None):
-        super(MoltenProtMainWindow, self).__init__(parent)
+        """
+        super().__init__(parent)
+        self.setupUi(self)
         self.setAttribute(Qt.WA_DeleteOnClose)
         MoltenProtMainWindow.Instances.add(self)
-
+        ### initialize attributes related to plotting
+        self.main_frame = None # keeps the matplolib widget
         self.layout = None
         self.canvas = None
+        self.fig = None
+        self.axes = None
+        self.currentCurveColor = None
+        self.legend = None
+        
+        ### initialize attributes related to widgets
+        self.curveVlinesCheckBoxIsChecked = None
+        self.curveHeatmapColorCheckBoxIsChecked = None
+        self.curveBaselineCheckBoxIsChecked = None
+        self.curveDerivativeCheckBoxIsChecked = None
+        self.curveLegendComboboxCurrentText = None
+        self.curveMarkEverySpinBoxValue = None
+        self.curveTypeComboboxCurrentText = None
+        self.curveViewComboboxCurrentText = None
+        self.moltenProtToolBox = None
+        self.colorMapComboBox = None
+        self.datasetComboBox = None
+        self.datasetComboBoxAction = None
+        self.heatmapMultipleListView = None
+        self.sortScoreComboBox = None
+        self.dockButtonsFrame = None
+        self.buttons = None
+        self.scanRateValue = None
+        self.font = None
+        self.sepValue = None
+        self.decValue = None
+        self.analysisDialog = None
+        self.allItemsInCurveTypeComboBox = None
+        
+        
         ## \brief  This attribute holds the filename of the data.
         self.filename = filename
-        if self.filename == None:
+        if self.filename is None:
             MoltenProtMainWindow.NextId += 1
-
+        self.fileLoaded = False
+        
+        ### analysis-related attrs
+        self.baseline_fit = None
+        self.baseline_bounds = None
+        self.mfilt = None
+        self.shrink = None
+        self.savgol = None
+        self.trim_min = None
+        self.trim_max = None
+        self.dCp = None
+        
         self.setAnalysisDefaults()
         ## \brief  This attribute holds the instance of MoltenProtFit object. \sa core.MoltenProtFit
         self.moltenProtFit = None
@@ -1009,6 +1058,7 @@ class MoltenProtMainWindow(QMainWindow):
 
         self.setRunAnalysisCounterLabel()
 
+        self.exportThread = None
         self.threadpool = QThreadPool()
         print(
             "Multithreading with maximum %d threads" % self.threadpool.maxThreadCount()
@@ -1021,6 +1071,7 @@ class MoltenProtMainWindow(QMainWindow):
         self.readFontFromSettings()
 
     def createExportThread(self):
+        'starts an export thread'
         self.exportThread = ExportThread(self)  # make a class instance
         self.exportThread.started.connect(self.on_started)
         self.exportThread.finished.connect(self.on_finished)
@@ -1035,29 +1086,34 @@ class MoltenProtMainWindow(QMainWindow):
         self.curveColorCycler = colorsafe_cycler()
         self.currentCurveColor = next(self.curveColorCycler)["color"]
 
-    def on_started(self):  # called when thread is started
+    def on_started(self):
+        ' called when thread is started'
         if showVersionInformation:
             print("on_started")
 
-    def on_finished(self):  # called when thread is finished
+    def on_finished(self):
+        ' called when thread is finished'
         if showVersionInformation:
             print("on_finished")
 
     def on_change(self, s):
-        # self.label.setText(s)
+        'dummy method'
         if showVersionInformation:
             print("on_change", s)
 
     def threadComplete(self):
         self.threadIsWorking = False
         QMessageBox.information(
-            self, "Info", "Export complete",
+            self,
+            "Info",
+            "Export complete",
         )
         self.status_text.setText("Results exported!")
 
-    ## \brief  This method sets the analysis data, which has been loaded from json file, to analysis options data in the Analysis Dialog.
     def setAnalysisOptionsFromJSON(self):
-        if self.moltenProtFit == None:
+        r"""    ## \brief  This method sets the analysis data, which has been loaded from json file, to analysis options data in the Analysis Dialog.
+        """
+        if self.moltenProtFit is None:
             print("self.moltenProtFit == None", cfFilename, currentframe().f_lineno)
         elif self.moltenProtFit.analysisHasBeenDone():
             # read the information from the MPFM instance
@@ -1069,37 +1125,35 @@ class MoltenProtMainWindow(QMainWindow):
             # set GUI elements
             self.setDoubleSpinBoxAccording2CheckBox(
                 analysis_settings["shrink"],
-                self.analysisDialog.ui.shrinkCheckBox,
-                self.analysisDialog.ui.shrinkDoubleSpinBox,
+                self.analysisDialog.shrinkCheckBox,
+                self.analysisDialog.shrinkDoubleSpinBox,
             )
             self.setDoubleSpinBoxAccording2CheckBox(
                 analysis_settings["mfilt"],
-                self.analysisDialog.ui.medianFilterCheckBox,
-                self.analysisDialog.ui.medianFilterSpinBox,
+                self.analysisDialog.medianFilterCheckBox,
+                self.analysisDialog.medianFilterSpinBox,
             )
             # NOTE trim settings are relative, but at the start of analysis the very original (plate_raw)
             # dataset is loaded, so extra chopping should not occur
             self.setAnalysisDialogTrimData()
-            self.analysisDialog.ui.dCpSpinBox.setValue(analysis_settings["dCp"])
-            self.analysisDialog.ui.baselineFitSpinBox.setValue(
+            self.analysisDialog.dCpSpinBox.setValue(analysis_settings["dCp"])
+            self.analysisDialog.baselineFitSpinBox.setValue(
                 analysis_settings["baseline_fit"]
             )
-            self.analysisDialog.ui.baselineBoundsSpinbox.setValue(
+            self.analysisDialog.baselineBoundsSpinbox.setValue(
                 analysis_settings["baseline_bounds"]
             )
-            if analysis_settings["savgol"] != None:
-                self.analysisDialog.ui.savgolSpinBox.setValue(
-                    analysis_settings["savgol"]
-                )
+            if analysis_settings["savgol"] is not None:
+                self.analysisDialog.savgolSpinBox.setValue(analysis_settings["savgol"])
 
             # update the dataset/model table
             self.prepareAnalysisTableView(data=model_settings)
 
-    ## \brief  This method is used to show/hide doubleSpinBox and set checkBox state according to analysisParameter.
     def setDoubleSpinBoxAccording2CheckBox(
         self, analysisParameter, checkBox, doubleSpinBox
     ):
-        if analysisParameter == None:
+        r"## \brief  This method is used to show/hide doubleSpinBox and set checkBox state according to analysisParameter."
+        if analysisParameter is None:
             checkBox.setChecked(False)
             doubleSpinBox.hide()
         else:
@@ -1107,30 +1161,35 @@ class MoltenProtMainWindow(QMainWindow):
             doubleSpinBox.setValue(analysisParameter)
             doubleSpinBox.show()
 
-    ## \brief  This method is used to show/hide tempRangeMaxSpinBox and set its range in the Analysis Dialog according to moltenProtFit.trim_min and moltenProtFit.trim_max values.
     def setAnalysisDialogTrimData(self):
-        if self.moltenProtFit == None:
+        r"""     ## \brief  This method is used to show/hide tempRangeMaxSpinBox and set its range in the Analysis Dialog according to moltenProtFit.trim_min and moltenProtFit.trim_max values.
+
+        """
+        if self.moltenProtFit is None:
             print("self.moltenProtFit == None", cfFilename, currentframe().f_lineno)
         else:
-            if self.moltenProtFit.trim_max == None:
+            if self.moltenProtFit.trim_max is None:
                 self.moltenProtFit.trim_max = 0
-            self.analysisDialog.ui.tempRangeMaxSpinBox.setValue(
+            self.analysisDialog.tempRangeMaxSpinBox.setValue(
                 self.moltenProtFit.trim_max
             )
-            if self.moltenProtFit.trim_min == None:
+            if self.moltenProtFit.trim_min is None:
                 self.moltenProtFit.trim_min = 0
-            self.analysisDialog.ui.tempRangeMinSpinBox.setValue(
+            self.analysisDialog.tempRangeMinSpinBox.setValue(
                 self.moltenProtFit.trim_min
             )
-            self.analysisDialog.ui.tempRangeMaxSpinBox.show()
-            self.analysisDialog.ui.tempRangeMinSpinBox.show()
+            self.analysisDialog.tempRangeMaxSpinBox.show()
+            self.analysisDialog.tempRangeMinSpinBox.show()
 
-    ## \brief  This method set analysis defaults from core data.
     def setAnalysisDefaults(self):
-        # there are now 3 dicts with options in core:
-        # analysis_defaults - options related to analysis
-        # prep_defaults - options related to data preprocessing
-        # defaults - uncategorized options
+        r"""
+        ## \brief  This method set analysis defaults from core data.
+        
+        there are now 3 dicts with options in core:
+            * analysis_defaults - options related to analysis
+            * prep_defaults - options related to data preprocessing
+            * defaults - uncategorized options
+        """
         # TODO Is it necessary to copy all values here??
         self.model = core.analysis_defaults["model"]
         self.baseline_fit = core.analysis_defaults["baseline_fit"]
@@ -1178,36 +1237,41 @@ class MoltenProtMainWindow(QMainWindow):
         )
         print("\033[0m" + "\n")
 
-    ## \brief This method shows run analysis counter for paricular user.
-    #    \details In Linux QSettings data (self.analysisRunsCounter is saved using QSettings object) are stored in $HOME/.config/MoltenProt/moltenprot.conf
-    #                   In MS Windows this data is stored in MS Windows registry.
     def setRunAnalysisCounterLabel(self):
-        self.mainWindow.runAnalysisCounterLabel.setText(
+        r"""
+        ## \brief This method shows run analysis counter for paricular user.
+            \details In Linux QSettings data (self.analysisRunsCounter is saved using QSettings object) are stored in $HOME/.config/MoltenProt/moltenprot.conf
+                           In MS Windows this data is stored in MS Windows registry.
+
+        """
+        self.runAnalysisCounterLabel.setText(
             "Global curve counter: {}".format(self.analysisRunsCounter)
         )
 
-    ## \brief This method implements analysis according to parameters entered by user from the corresponding GUI elements.
-    # \todo We have here debug print, which should be excluded from the production version.
     def acceptAnalysis(self):
-
+        r"""
+        ## \brief This method implements analysis according to parameters entered by user from the corresponding GUI elements.
+        # \todo We have here debug print, which should be excluded from the production version.
+    
+        """
         # step 1: construct analysis_kwargs from GUI elements
-        if self.analysisDialog.ui.medianFilterCheckBox.isChecked():
-            self.mfilt = self.analysisDialog.ui.medianFilterSpinBox.value()
+        if self.analysisDialog.medianFilterCheckBox.isChecked():
+            self.mfilt = self.analysisDialog.medianFilterSpinBox.value()
         else:
             self.mfilt = None
 
-        if self.analysisDialog.ui.shrinkCheckBox.isChecked():
-            self.shrink = self.analysisDialog.ui.shrinkDoubleSpinBox.value()
+        if self.analysisDialog.shrinkCheckBox.isChecked():
+            self.shrink = self.analysisDialog.shrinkDoubleSpinBox.value()
         else:
             self.shrink = None
 
-        self.trim_min = self.analysisDialog.ui.tempRangeMinSpinBox.value()
-        self.trim_max = self.analysisDialog.ui.tempRangeMaxSpinBox.value()
+        self.trim_min = self.analysisDialog.tempRangeMinSpinBox.value()
+        self.trim_max = self.analysisDialog.tempRangeMaxSpinBox.value()
 
-        self.dCp = self.analysisDialog.ui.dCpSpinBox.value()
-        self.baseline_fit = self.analysisDialog.ui.baselineFitSpinBox.value()
-        self.baseline_bounds = self.analysisDialog.ui.baselineBoundsSpinbox.value()
-        self.savgol = self.analysisDialog.ui.savgolSpinBox.value()
+        self.dCp = self.analysisDialog.dCpSpinBox.value()
+        self.baseline_fit = self.analysisDialog.baselineFitSpinBox.value()
+        self.baseline_bounds = self.analysisDialog.baselineBoundsSpinbox.value()
+        self.savgol = self.analysisDialog.savgolSpinBox.value()
 
         analysis_kwargs = dict(
             baseline_fit=self.baseline_fit,
@@ -1226,7 +1290,7 @@ class MoltenProtMainWindow(QMainWindow):
 
         # step 2: cycle through datasets/models table and apply analysis options
         # read a pandas df representing the table of dataset/model (dm_table)
-        dm_table = self.analysisDialog.ui.analysisTableView.model()._data
+        dm_table = self.analysisDialog.analysisTableView.model()._data
 
         # cycle through available datasets and set analysis options as in analysis_kwargs
         for i in dm_table.index:
@@ -1269,9 +1333,7 @@ class MoltenProtMainWindow(QMainWindow):
 
         # actions done only if analysis was successful
         if self.dataProcessed:
-            self.mainWindow.protocolPlainTextEdit.setPlainText(
-                self.moltenProtFit.protocolString
-            )
+            self.protocolPlainTextEdit.setPlainText(self.moltenProtFit.protocolString)
             self.populateAndShowSortScoreComboBox()
             self.setButtonsStyleAccordingToNormalizedData()
 
@@ -1296,13 +1358,13 @@ class MoltenProtMainWindow(QMainWindow):
 
             self.settings.sync()
             self.status_text.setText("Data analysis complete.")
-            self.mainWindow.actionExport.setVisible(True)
+            self.actionExport.setVisible(True)
             # adjust subplots
             self.manageSubplots()
 
-    ## \brief This method implements analysis according to parameters entered by user from the corresponding GUI elements.
     def runAnalysis(self):
-        n_jobs = self.moltenProtToolBox.ui.parallelSpinBox.value()
+        r"## \brief This method implements analysis according to parameters entered by user from the corresponding GUI elements."
+        n_jobs = self.moltenProtToolBox.parallelSpinBox.value()
 
         self.moltenProtFitMultiple.PrepareAndAnalyseAll(n_jobs=n_jobs)
 
@@ -1322,125 +1384,113 @@ class MoltenProtMainWindow(QMainWindow):
                 )
 
         self.setRunAnalysisCounterLabel()
-        self.moltenProtToolBox.ui.colormapForPlotComboBox.show()
-        self.moltenProtToolBox.ui.colormapForPlotLabel.show()
+        self.moltenProtToolBox.colormapForPlotComboBox.show()
+        self.moltenProtToolBox.colormapForPlotLabel.show()
 
         self.showHideSelectDeselectAll(True)
 
-    def createPlotSettings(self):
-        self.curveVlinesCheckBoxIsChecked = None
-        self.curveHeatmapColorCheckBoxIsChecked = None
-        self.curveBaselineCheckBoxIsChecked = None
-        self.curveDerivativeCheckBoxIsChecked = None
-        self.curveLegendComboboxCurrentText = None
-        self.curveMarkEverySpinBoxValue = None
-        self.curveTypeComboboxCurrentText = None
-        self.curveViewComboboxCurrentText = None
 
-    ## \brief This method connects signals for Plot tab in Settings dialog data GUI elements.
     def connectPlotSettingsSignals(self):
-        # new code: for all actions just update values in the main window attributes
-        self.moltenProtToolBox.ui.curveVlinesCheckBox.clicked.connect(
+        r"## \brief This method connects signals for Plot tab in Settings dialog data GUI elements."
+        self.moltenProtToolBox.curveVlinesCheckBox.clicked.connect(self.getPlotSettings)
+        self.moltenProtToolBox.curveBaselineCheckBox.clicked.connect(
             self.getPlotSettings
         )
-        self.moltenProtToolBox.ui.curveBaselineCheckBox.clicked.connect(
-            self.getPlotSettings
-        )
-        self.moltenProtToolBox.ui.curveHeatmapColorCheckBox.clicked.connect(
+        self.moltenProtToolBox.curveHeatmapColorCheckBox.clicked.connect(
             self.getPlotSettings
         )
 
         # legend and derivative subplots require dedicated methods
-        self.moltenProtToolBox.ui.curveLegendComboBox.currentIndexChanged.connect(
+        self.moltenProtToolBox.curveLegendComboBox.currentIndexChanged.connect(
             self.manageSubplots
         )
-        # self.moltenProtToolBox.ui.curveDerivativeCheckBox.clicked.connect(self.getPlotSettings)
-        self.moltenProtToolBox.ui.curveDerivativeCheckBox.clicked.connect(
+        self.moltenProtToolBox.curveDerivativeCheckBox.clicked.connect(
             self.manageSubplots
         )
 
         # Get data from spinbox.
-        self.moltenProtToolBox.ui.curveMarkEverySpinBox.valueChanged[int].connect(
+        self.moltenProtToolBox.curveMarkEverySpinBox.valueChanged[int].connect(
             self.on_curveMarkEverySpinBoxValueChanged
         )
         # Get data from comboboxes.
-        self.moltenProtToolBox.ui.curveTypeComboBox.currentIndexChanged.connect(
+        self.moltenProtToolBox.curveTypeComboBox.currentIndexChanged.connect(
             self.on_curveTypeComboBoxCurrentIndexChanged
         )
-        self.moltenProtToolBox.ui.curveViewComboBox.currentIndexChanged.connect(
+        self.moltenProtToolBox.curveViewComboBox.currentIndexChanged.connect(
             self.on_curveViewComboBoxCurrentIndexChanged
         )
 
-    @pyqtSlot()
+    @Slot()
     def on_curveTypeComboBoxCurrentIndexChanged(self):
-        # print 'on_curveTypeComboBoxCurrentTextChanged',  cfFilename, currentframe().f_lineno
+        "when curve type widget is changed"
         self.curveTypeComboboxCurrentText = (
-            self.moltenProtToolBox.ui.curveTypeComboBox.currentText()
+            self.moltenProtToolBox.curveTypeComboBox.currentText()
         )
-        # print self.curveTypeComboboxCurrentText,  cfFilename, currentframe().f_lineno
 
-    @pyqtSlot()
+    @Slot()
     def on_curveViewComboBoxCurrentIndexChanged(self):
-        # print 'on_curveTypeComboBoxCurrentTextChanged',  cfFilename, currentframe().f_lineno
+        "when the curve viewing combobox is changed"
         self.curveViewComboboxCurrentText = (
-            self.moltenProtToolBox.ui.curveViewComboBox.currentText()
+            self.moltenProtToolBox.curveViewComboBox.currentText()
         )
 
-    @pyqtSlot()
-    def on_curveMarkEverySpinBoxValueChanged(self):  # ,  value_as_int):
-        # print 'int value changed:',  value_as_int,  cfFilename, currentframe().f_lineno
+    @Slot()
+    def on_curveMarkEverySpinBoxValueChanged(self):
+        "when a value changes in mark every spin box"
         self.curveMarkEverySpinBoxValue = (
-            self.moltenProtToolBox.ui.curveMarkEverySpinBox.value()
+            self.moltenProtToolBox.curveMarkEverySpinBox.value()
         )
 
-    ## \brief This method gets Plot tab in Settings dialog data from its GUI elements.
     def getPlotSettings(self):
+        r"## \brief This method gets Plot tab in Settings dialog data from its GUI elements."
         self.curveHeatmapColorCheckBoxIsChecked = (
-            self.moltenProtToolBox.ui.curveHeatmapColorCheckBox.isChecked()
+            self.moltenProtToolBox.curveHeatmapColorCheckBox.isChecked()
         )
         self.curveVlinesCheckBoxIsChecked = (
-            self.moltenProtToolBox.ui.curveVlinesCheckBox.isChecked()
+            self.moltenProtToolBox.curveVlinesCheckBox.isChecked()
         )
         self.curveBaselineCheckBoxIsChecked = (
-            self.moltenProtToolBox.ui.curveBaselineCheckBox.isChecked()
+            self.moltenProtToolBox.curveBaselineCheckBox.isChecked()
         )
         self.curveDerivativeCheckBoxIsChecked = (
-            self.moltenProtToolBox.ui.curveDerivativeCheckBox.isChecked()
+            self.moltenProtToolBox.curveDerivativeCheckBox.isChecked()
         )
         self.curveLegendComboboxCurrentText = (
-            self.moltenProtToolBox.ui.curveLegendComboBox.currentText()
+            self.moltenProtToolBox.curveLegendComboBox.currentText()
         )
         self.curveMarkEverySpinBoxValue = (
-            self.moltenProtToolBox.ui.curveMarkEverySpinBox.value()
+            self.moltenProtToolBox.curveMarkEverySpinBox.value()
         )
         self.curveTypeComboboxCurrentText = (
-            self.moltenProtToolBox.ui.curveTypeComboBox.currentText()
+            self.moltenProtToolBox.curveTypeComboBox.currentText()
         )
         self.curveViewComboboxCurrentText = (
-            self.moltenProtToolBox.ui.curveViewComboBox.currentText()
+            self.moltenProtToolBox.curveViewComboBox.currentText()
         )
         # clean up the axes after plot settings are changed
         self.axisClear()
         self.on_deselectAll()
         self.canvas.draw()
 
-    ## \brief This method  creates toolbox dialog.
-    #   \todo When toolbox appearence will be fixed, we should set fixed width and height for this dialog.
     def createToolBox(self):
-        self.moltenProtToolBox = MoltenProtToolBox(self)
+        r"""
+        ## \brief This method  creates toolbox dialog.
+        #   \todo When toolbox appearence will be fixed, we should set fixed width and height for this dialog.
+        """
+        self.moltenProtToolBox = moltenProtToolBox(self)
         self.allItemsInCurveTypeComboBox = [
-            self.moltenProtToolBox.ui.curveTypeComboBox.itemText(i)
-            for i in range(self.moltenProtToolBox.ui.curveTypeComboBox.count())
+            self.moltenProtToolBox.curveTypeComboBox.itemText(i)
+            for i in range(self.moltenProtToolBox.curveTypeComboBox.count())
         ]
-        self.createPlotSettings()
         self.getPlotSettings()
         self.connectPlotSettingsSignals()
 
         width = self.moltenProtToolBox.width()
         height = self.moltenProtToolBox.height()
-        wid = QDesktopWidget()
-        screenWidth = wid.screen().width()
-        screenHeight = wid.screen().height()
+
+        screen_size = QApplication.instance().primaryScreen().availableSize()
+        screenWidth = screen_size.width()
+        screenHeight = screen_size.height()
         self.moltenProtToolBox.setGeometry(
             int((screenWidth / 2) - (width / 2)),
             int((screenHeight / 2) - (height / 2)),
@@ -1448,14 +1498,14 @@ class MoltenProtMainWindow(QMainWindow):
             height,
         )
 
-    ## \brief This method  creates analysis dialog
     def createAnalysisDialog(self):
+        r"""    ## \brief This method  creates analysis dialog"""
         self.analysisDialog = AnalysisDialog(self)
-        self.analysisDialog.ui.buttonBox.accepted.connect(self.acceptAnalysis)
+        self.analysisDialog.buttonBox.accepted.connect(self.acceptAnalysis)
 
-    ## \brief This method creates the following dialogs: Preferences, Analysis and Layout.
-    #   \sa AnalysisDialog, moltenProtToolBox, LayoutDialog and HelpDialog.
     def initDialogs(self):
+        r"""    ## \brief This method creates the following dialogs: Preferences, Analysis and Layout.
+      \sa AnalysisDialog, moltenProtToolBox, LayoutDialog and HelpDialog."""
         self.createToolBox()
         self.createColorMapComboBox()
         self.createAnalysisDialog()
@@ -1464,37 +1514,34 @@ class MoltenProtMainWindow(QMainWindow):
         self.layoutDialog = LayoutDialog()
         self.connectButtonsFromLayoutDialog()
         # Create help dialog
-        self.helpDialog = MoltenProtHelpDialog("index.html")
+        self.helpDialog = MoltenProtHelpDialog()
 
         # set tooltips for dialogs
         self.setTooltips()
 
-    ## \brief This method shows the Analysis Dialog.
-    @pyqtSlot()
+    @Slot()
     def on_analysisPushButtonClicked(self):
+        r"\brief This method shows the Analysis Dialog."
         self.analysisDialog.show()
 
-    ## \brief This method is dummy and should be implemented.
-    #   \todo This method is dummy and should be implemented.
-    @pyqtSlot()
+    @Slot()
     def on_kelvinsCheckBoxChecked(self):
+        "This method is dummy and should be implemented."
         if showVersionInformation:
             print("on_kelvinsCheckBoxChecked")
 
-    ## \brief This method is not used.
-    #   \todo This method is not used.
     def analysisModeBoxSelectionChange(self, i):
-        self.analysisMode = self.importDialog.ui.analysisModeBox.currentText()
+        "This method is not used."
+        self.analysisMode = self.importDialog.analysisModeBox.currentText()
 
-    ## \brief This method is dummy and should be implemented.
-    #   \todo This method is dummy and should be implemented.
     def parseArgs(self):
+        "dummy method for CLI parsing - to be implemented"
         self.sepValue = ","
         self.decValue = "."
         self.exclude = []
         self.blanks = []
 
-    @pyqtSlot()
+    @Slot()
     def on_exportResults(self):
         """
         Actions performed when the export data button is clicked
@@ -1507,8 +1554,8 @@ class MoltenProtMainWindow(QMainWindow):
             filenames = dlg.selectedFiles()
             filename = filenames[0]
             # get export settings from the ui elements and convert them into kwargs for MP.WriteOutput
-            data_out = self.moltenProtToolBox.ui.outputFormatComboBox.currentIndex()
-            report_out = self.moltenProtToolBox.ui.outputReportComboBox.currentIndex()
+            data_out = self.moltenProtToolBox.outputFormatComboBox.currentIndex()
+            report_out = self.moltenProtToolBox.outputReportComboBox.currentIndex()
 
             out_kwargs = {}
             out_kwargs["outfolder"] = filename
@@ -1522,7 +1569,7 @@ class MoltenProtMainWindow(QMainWindow):
                 out_kwargs["xlsx"] = False
             elif data_out == 2:
                 out_kwargs["xlsx"] = True
-            
+
             # NOTE matplotlib is not thread-safe, so threading is disabled for some options
             use_threads = True
             if report_out == 0:
@@ -1540,15 +1587,12 @@ class MoltenProtMainWindow(QMainWindow):
                 out_kwargs["report_format"] = "html"
                 use_threads = False
 
-            out_kwargs["n_jobs"] = self.moltenProtToolBox.ui.parallelSpinBox.value()
+            out_kwargs["n_jobs"] = self.moltenProtToolBox.parallelSpinBox.value()
 
             QApplication.setOverrideCursor(Qt.WaitCursor)
 
             if use_threads:
-                worker = ExportWorker(
-                    self.moltenProtFitMultiple,
-                    **out_kwargs
-                )
+                worker = ExportWorker(self.moltenProtFitMultiple, **out_kwargs)
                 worker.signals.finished.connect(self.threadComplete)
                 worker.signals.progress.connect(self.progressFn)
                 self.threadIsWorking = True
@@ -1558,48 +1602,51 @@ class MoltenProtMainWindow(QMainWindow):
                 self.moltenProtFitMultiple.WriteOutputAll(**out_kwargs)
 
             QApplication.restoreOverrideCursor()
-            self.status_text.setText(
-                "Results exported to folder {}".format(filename)
-            )
-
+            self.status_text.setText("Results exported to folder {}".format(filename))
 
     def executeThisFn(self, progress_callback):
+        "to show worker progress - not implemented"
         if showVersionInformation:
             print("executeThisFn")
         return "Done."
 
     def progressFn(self):
+        "to show worker progress - not implemented"
         if showVersionInformation:
             print("progressFn")
 
-    ## \brief This SLOT is called when user clicks <b>New</b> button and  runs another instance of MoltenProt GUI application.
-    @pyqtSlot()
+    @Slot()
     def on_actionNewTriggered(self):
+        r"## \brief This SLOT is called when user clicks <b>New</b> button and  runs another instance of MoltenProt GUI application."
         MoltenProtMainWindow().show()
 
-    @pyqtSlot()
+    @Slot()
     def on_actionFontTriggered(self):
+        'actions when fonts are changed'
         fontDialog = QFontDialog(self)
         fontDialog.setFont(self.font)
-        font, ok = fontDialog.getFont()
+        ok, font = fontDialog.getFont()
         if ok:
             self.font = font
             self.settings.setValue("fontSettings/currentFont", self.font.toString())
             self.setNewFont(self.font)
 
     def setIconSize(self):
+        "sets sizes of icons"
         self.iconSize = self.font.pointSize() * 3
         iconSize = QSize(self.iconSize, self.iconSize)
-        self.mainWindow.fileToolBar.setIconSize(iconSize)
-        self.mainWindow.actionToolBar.setIconSize(iconSize)
-        self.mainWindow.miscToolBar.setIconSize(iconSize)
+        self.fileToolBar.setIconSize(iconSize)
+        self.actionToolBar.setIconSize(iconSize)
+        self.miscToolBar.setIconSize(iconSize)
 
     def setNewFont(self, newFont):
+        'sets a new font'
         self.font = newFont
         self.setApplicationMenuFont()
         self.setIconSize()
 
     def readFontFromSettings(self):
+        "restore font settings"
         newFontString = self.settings.value("fontSettings/currentFont")
         newFont = QFont()
         ok = newFont.fromString(newFontString)
@@ -1609,68 +1656,59 @@ class MoltenProtMainWindow(QMainWindow):
             print("Failed to set font", newFont, cfFilename, currentframe().f_lineno)
 
     def setApplicationMenuFont(self):
-        QtWidgets.QApplication.setFont(self.font, "QFileDialog")
-        QtWidgets.QApplication.setFont(self.font, "QPushButton")
-        QtWidgets.QApplication.setFont(self.font, "QAction")
-        QtWidgets.QApplication.setFont(self.font, "QFontDialog")
-        QtWidgets.QApplication.setFont(self.font, "QToolBar")
-        QtWidgets.QApplication.setFont(self.font, "QMainWindow")
-        QtWidgets.QApplication.setFont(self.font, "QWidget")
-        QtWidgets.QApplication.setFont(self.font, "QTextEdit")
-        QtWidgets.QApplication.setFont(self.font, "QDialogButtonBox")
-        if self.canvas != None:
+        "Updates fonts in widgets"
+        QApplication.setFont(self.font, "QFileDialog")
+        QApplication.setFont(self.font, "QPushButton")
+        QApplication.setFont(self.font, "QAction")
+        QApplication.setFont(self.font, "QFontDialog")
+        QApplication.setFont(self.font, "QToolBar")
+        QApplication.setFont(self.font, "QMainWindow")
+        QApplication.setFont(self.font, "QWidget")
+        QApplication.setFont(self.font, "QTextEdit")
+        QApplication.setFont(self.font, "QDialogButtonBox")
+        if self.canvas is not None:
             self.canvas.setFont(self.font)
 
-    ## \brief This SLOT is called when user clicks <b>About</b> button and shows some information about used python modules and Qt version.
-    @pyqtSlot()
+    @Slot()
     def on_actionAbout(self):
-        mp_version = str(core.__version__)
-        # check if running from PyInstaller bundle and add info to version
-        if core.from_pyinstaller:
-            mp_version += " (PyInstaller bundle)"
+        r"    ## \brief This SLOT is called when user clicks <b>About</b> button and shows some information about used python modules and Qt version."
         QMessageBox.about(
             self,
             "About MoltenProt",
-            """<b>MoltenProt</b> v. %s
-        <p>Copyright &copy; 2018-2021 Vadim Kotov, Thomas C. Marlovits
-        <p>A robust toolkit for assessment and optimization of protein (thermo)stability.
-        <p>Python %s - PyQt5 %s - Matplotlib %s on %s"""
-            % (
-                core.__version__,
-                platform.python_version(),
-                PYQT_VERSION_STR,
-                matplotlib.__version__,
-                platform.system(),
-            ),
+            ABOUT_HTML
         )
 
-    ## \brief This SLOT is called when user clicks <b>Cite</b> menu item.
-    @pyqtSlot()
+    @Slot()
     def on_actionCite_MoltenProt(self):
+        r"## \brief This SLOT is called when user clicks <b>Cite</b> menu item."
         QMessageBox.about(
-            self, "Cite MoltenProt", core.citation["html"],
+            self,
+            "Cite MoltenProt",
+            core.citation["html"],
         )
 
-    ## \brief This SLOT is called when user clicks <b>Help</b> menu item and shows the MoltenProt help system main window.
-    @pyqtSlot()
+    @Slot()
     def on_actionHelp(self):
+        r"## \brief This SLOT is called when user clicks <b>Help</b> menu item and shows the MoltenProt help system main window."
         self.helpDialog.show()
 
-    ## \brief This SLOT is called when user clicks File>Load sample data
-    @pyqtSlot()
+    @Slot()
     def on_actionLoad_sample_data(self):
-        # opens the folder where demo data is stored
+        r"""
+        ## \brief This SLOT is called when user clicks File>Load sample data
+             opens the folder where demo data is stored
+        """
         self.on_loadFile(directory=os.path.join(core.__location__, "demo_data"))
 
-    ## \brief Save the current case as JSON.
-    @pyqtSlot()
+    @Slot()
     def on_actionSave_as_JSONTriggered(self):
+        """## \brief Save the current session as JSON."""
         filename = QFileDialog.getSaveFileName(
             self,
             caption=self.tr(
                 "Save MoltenProt session in *.json format"
             ),  # the title of the dialog window
-            directory=self.lastDir,  # the starting directory, use "." for cwd
+            dir=self.lastDir,  # the starting directory, use "." for cwd
             filter="JSON Files (*.json)",  # file type filter
         )
 
@@ -1681,18 +1719,14 @@ class MoltenProtMainWindow(QMainWindow):
                 filename += ".json"
             core.mp_to_json(self.moltenProtFitMultiple, filename)
 
-    def prepareAnalysisTableView(self, data=None):
-        # if data is None generate the table freshly
-        # otherwise populate using the values from supplied dataframe
+    def prepareAnalysisTableView(self, data:pd.DataFrame=None):
+        """if data is None generate the table freshly
+        otherwise populate using the values from supplied dataframe"""
 
         analysisModeComboBoxItemsList = list(core.avail_models.keys())
 
         if data is None:
-            # analysisModeComboBoxItemsList = list( core.avail_models.keys() )
-            # analysisModeComboBoxItemsList.append('skip') # skip is now a "model", too
             defaultModel = analysisModeComboBoxItemsList[0]
-            # self.analysisDialog.ui.analysisModeComboBox.clear()
-            # self.analysisDialog.ui.analysisModeComboBox.insertItems(1,  analysisModeComboBoxItemsList)
 
             currentDataSetsList = list(self.moltenProtFitMultiple.GetDatasets())
             data = pd.DataFrame(columns=("Dataset", "Model"))
@@ -1700,20 +1734,20 @@ class MoltenProtMainWindow(QMainWindow):
                 data.loc[i] = [currentDataSetsList[i], defaultModel]
 
         tableModel = TableModel(data)
-        self.analysisDialog.ui.analysisTableView.setModel(tableModel)
+        self.analysisDialog.analysisTableView.setModel(tableModel)
         comboDelegate = ComboDelegate(self, analysisModeComboBoxItemsList)
-        self.analysisDialog.ui.analysisTableView.setItemDelegateForColumn(
-            1, comboDelegate
-        )
+        self.analysisDialog.analysisTableView.setItemDelegateForColumn(1, comboDelegate)
 
     def showHideSelectDeselectAll(self, show):
-        self.mainWindow.actionSelectAll.setVisible(show)
-        self.mainWindow.actionDeselectAll.setVisible(show)
+        "Toggle visiblity of the select/deselect buttons"
+        self.actionSelectAll.setVisible(show)
+        self.actionDeselectAll.setVisible(show)
 
-    ## \brief Load the input data in xlsx, JSON or csv format for analysis.
-    @pyqtSlot()
+    @Slot()
     def on_loadFile(self, directory=None):
-        """
+        r"""
+        \brief Load the input data in xlsx, JSON or csv format for analysis.
+        
         Parameters
         ----------
         directory
@@ -1721,13 +1755,19 @@ class MoltenProtMainWindow(QMainWindow):
         """
         if directory is None:
             directory = self.lastDir
+        # HACK prevent directory from being a boolean
+        if isinstance(directory, bool):
+            directory = None
 
         self.on_deselectAll()
+
         filename = QFileDialog.getOpenFileName(
-            # self,
+            self,
             caption=self.tr("Open JSON session or import data"),
-            directory=directory,
-            filter="XLSX Files (*.xlsx);;JSON Files (*.json);;CSV files (*.csv)",
+            dir=directory,
+            filter=self.tr(
+                "XLSX Files (*.xlsx);;JSON Files (*.json);;CSV files (*.csv)"
+            ),
         )
         # returns a tuple with file path, and the mode of QFileDialog used (XLSX Files, JSON Files, etc)
         filename = filename[0]
@@ -1737,18 +1777,13 @@ class MoltenProtMainWindow(QMainWindow):
             self.settings.setValue("settings/lastDir", self.lastDir)
             self.settings.sync()
             self.resetButtons()
-            if self.sortScoreCombBoxAction != None:  # TODO is this really needed here?
+            if self.sortScoreCombBoxAction is not None:  # TODO is this really needed here?
                 self.sortScoreCombBoxAction.setVisible(False)
             self.dataProcessed = False
-
-            if self.fileLoaded == False:
-                # print("self.createMatplotlibContextMenu() has been commented.")
-                pass
-            else:
-                # print("Clear previous data", cfFilename, currentframe().f_lineno)
+            if self.fileLoaded:
                 self.on_deselectAll()
                 self.axisClear()
-                self.mainWindow.actionExport.setVisible(False)
+                self.actionExport.setVisible(False)
             QApplication.setOverrideCursor(Qt.WaitCursor)
             try:
                 if filename.endswith(".csv"):
@@ -1759,9 +1794,17 @@ class MoltenProtMainWindow(QMainWindow):
                     self.processXLSX(filename)
                 self.status_text.setText("Loaded " + filename)
                 self.fileLoaded = True
-            except (ValueError, KeyError) as e: # KeyError is raised when a regular XLSX file is opened with panta_rhei settings
+            except (
+                ValueError,
+                KeyError,
+            ) as e:  # KeyError is raised when a regular XLSX file is opened with panta_rhei settings
                 # TODO currently the previous data/layout is left around even though the file could not open
-                QMessageBox.warning(self, "MoltenProt Open File Error", f"The input file cannot be opened due to error:\n {e}\n check if the correct file is selected and if import settings are appropriate")
+                # TODO if loading a spectrum CSV with regular CSV settings no error is shown (but the UI is empty)
+                QMessageBox.warning(
+                    self,
+                    "MoltenProt Open File Error",
+                    f"The input file cannot be opened due to error:\n {e}\n check if the correct file is selected and if import settings are appropriate",
+                )
                 self.status_text.setText("Requested file could not be opened.")
                 # reset the GUI
                 self.resetGUI()
@@ -1794,8 +1837,8 @@ class MoltenProtMainWindow(QMainWindow):
                             currentframe().f_lineno,
                         )
                     # self.showHideSelectDeselectAll(True)
-                    self.moltenProtToolBox.ui.colormapForPlotComboBox.show()
-                    self.moltenProtToolBox.ui.colormapForPlotLabel.show()
+                    self.moltenProtToolBox.colormapForPlotComboBox.show()
+                    self.moltenProtToolBox.colormapForPlotLabel.show()
                     self.populateAndShowSortScoreComboBox()
                     self.setButtonsStyleAccordingToNormalizedData()
                     self.sortScoreComboBox.clear()
@@ -1803,8 +1846,8 @@ class MoltenProtMainWindow(QMainWindow):
                         1, self.moltenProtFit.getResultsColumns()
                     )
                 else:
-                    self.moltenProtToolBox.ui.colormapForPlotComboBox.hide()
-                    self.moltenProtToolBox.ui.colormapForPlotLabel.hide()
+                    self.moltenProtToolBox.colormapForPlotComboBox.hide()
+                    self.moltenProtToolBox.colormapForPlotLabel.hide()
         elif filename != "":
             # empty string is returned when Cancel is pressed in QFileDialog
             QMessageBox.warning(
@@ -1813,8 +1856,8 @@ class MoltenProtMainWindow(QMainWindow):
             self.resetGUI()
 
     def populateDatasetComboBox(self, available_datasets):
-        # Adds datasets from the list to the respective combobox
-        # if there is one or no datasets, the combobox is hidden
+        """ Adds datasets from the list to the respective combobox
+         if there is one or no datasets, the combobox is hidden"""
         self.datasetComboBox.clear()
         if len(available_datasets) <= 1:
             self.datasetComboBoxAction.setVisible(False)
@@ -1824,17 +1867,19 @@ class MoltenProtMainWindow(QMainWindow):
             self.datasetComboBox.setMinimumWidth(width)
             self.datasetComboBoxAction.setVisible(True)
 
-    ## \brief This method is used to process CSV file named filename
-    #   \param filename - CSV file to process.
-    #   \todo Debug print is used here.
     def processCsv(self, filename):
+        r"""
+        # \brief This method is used to process CSV file named filename
+       \param filename - CSV file to process.
+       \todo Debug print is used here.
+        """
         if showVersionInformation:
             print("processCsv", filename, cfFilename, currentframe().f_lineno)
-        self.sepValue = self.moltenProtToolBox.ui.separatorInput.text()
-        self.decValue = self.moltenProtToolBox.ui.decimalSeparatorInput.text()
-        self.scanRateValue = self.moltenProtToolBox.ui.scanRateSpinBox.value()
+        self.sepValue = self.moltenProtToolBox.separatorInput.text()
+        self.decValue = self.moltenProtToolBox.decimalSeparatorInput.text()
+        self.scanRateValue = self.moltenProtToolBox.scanRateSpinBox.value()
 
-        if self.moltenProtToolBox.ui.spectrumCsvCheckBox.isChecked():
+        if self.moltenProtToolBox.spectrumCsvCheckBox.isChecked():
             self.moltenProtFitMultiple = core.parse_spectrum_csv(
                 filename,
                 sep=self.sepValue,
@@ -1852,11 +1897,12 @@ class MoltenProtMainWindow(QMainWindow):
         self.moltenProtFit = self.moltenProtFitMultiple.datasets[available_datasets[0]]
         self.populateDatasetComboBox(available_datasets)
 
-    ## \brief This method is used to process JSON file named filename
-    #   \param filename - JSON file to process.
-    #   \todo Debug print is used here.
     def processJSON(self, filename):
-        # print("processJSON", filename, cfFilename, currentframe().f_lineno)
+        r"""
+        ## \brief This method is used to process JSON file named filename
+        \param filename - JSON file to process.
+        \todo Debug print is used here.    
+        """
         jsonData = core.mp_from_json(filename)
         if isinstance(jsonData, core.MoltenProtFitMultiple):
             self.moltenProtFitMultiple = jsonData
@@ -1874,7 +1920,7 @@ class MoltenProtMainWindow(QMainWindow):
             if self.moltenProtFit.analysisHasBeenDone():
                 self.dataProcessed = True
                 # make the export button visible
-                self.mainWindow.actionExport.setVisible(True)
+                self.actionExport.setVisible(True)
                 # update plot view
                 self.manageSubplots()
             else:
@@ -1893,76 +1939,75 @@ class MoltenProtMainWindow(QMainWindow):
                     currentframe().f_lineno,
                 )
 
-    ## \brief This method is used to process XLSX file named filename.
-    #   \param filename - XLSX file to process.
-    #   \todo Debug print is used here.
     def processXLSX(self, filename):
-        refolding = self.moltenProtToolBox.ui.refoldingCheckBox.isChecked()
-        is_raw = self.moltenProtToolBox.ui.rawCheckBox.isChecked()
-        is_panta = self.moltenProtToolBox.ui.pantaCheckBox.isChecked()
+        r"""
+        \brief This method is used to process XLSX file named filename.
+       \param filename - XLSX file to process.
+       \todo Debug print is used here.
+        """
+        refolding = self.moltenProtToolBox.refoldingCheckBox.isChecked()
+        is_raw = self.moltenProtToolBox.rawCheckBox.isChecked()
+        is_panta = self.moltenProtToolBox.pantaCheckBox.isChecked()
         self.moltenProtFitMultiple = core.parse_prom_xlsx(
-            filename, raw=is_raw, refold=refolding, panta_rhei = is_panta,
+            filename,
+            raw=is_raw,
+            refold=refolding,
+            panta_rhei=is_panta,
         )
         available_datasets = self.moltenProtFitMultiple.GetDatasets()
         self.moltenProtFit = self.moltenProtFitMultiple.datasets[available_datasets[0]]
-        # MPF2 dynamically populate heatmap combobox
         self.populateDatasetComboBox(available_datasets)
         # NOTE XLSX is always unprocessed, however, dataProcessed attribute
         # and the view of the plots must be reset from the previous run
         self.dataProcessed = False
         self.manageSubplots()
 
-    ## \brief This method set tooltips for GUI elements using core.MoltenProtFit.defaults dictionary.
-    #   \sa core.defaults dicts
     def setTooltips(self):
+        r"""
+        \brief This method set tooltips for GUI elements using core.MoltenProtFit.defaults dictionary.
+        \sa core.defaults dicts
+        """
         # data prep defaults
-        self.analysisDialog.ui.shrinkCheckBox.setToolTip(core.prep_defaults["shrink_h"])
-        self.analysisDialog.ui.shrinkDoubleSpinBox.setToolTip(
+        self.analysisDialog.shrinkCheckBox.setToolTip(core.prep_defaults["shrink_h"])
+        self.analysisDialog.shrinkDoubleSpinBox.setToolTip(
             core.prep_defaults["shrink_h"]
         )
-        self.analysisDialog.ui.medianFilterCheckBox.setToolTip(
+        self.analysisDialog.medianFilterCheckBox.setToolTip(
             core.prep_defaults["mfilt_h"]
         )
-        self.analysisDialog.ui.medianFilterSpinBox.setToolTip(
+        self.analysisDialog.medianFilterSpinBox.setToolTip(
             core.prep_defaults["mfilt_h"]
         )
-        self.analysisDialog.ui.tempRangeMaxSpinBox.setToolTip(
+        self.analysisDialog.tempRangeMaxSpinBox.setToolTip(
             core.prep_defaults["trim_max_h"]
         )
-        self.analysisDialog.ui.tempRangeMinSpinBox.setToolTip(
+        self.analysisDialog.tempRangeMinSpinBox.setToolTip(
             core.prep_defaults["trim_min_h"]
         )
         # analysis defaults
-        self.analysisDialog.ui.dCpSpinBox.setToolTip(core.analysis_defaults["dCp_h"])
-        self.analysisDialog.ui.baselineFitSpinBox.setToolTip(
+        self.analysisDialog.dCpSpinBox.setToolTip(core.analysis_defaults["dCp_h"])
+        self.analysisDialog.baselineFitSpinBox.setToolTip(
             core.analysis_defaults["baseline_fit_h"]
         )
-        self.analysisDialog.ui.baselineBoundsSpinbox.setToolTip(
+        self.analysisDialog.baselineBoundsSpinbox.setToolTip(
             core.analysis_defaults["baseline_bounds_h"]
         )
-        self.analysisDialog.ui.savgolSpinBox.setToolTip(
-            core.analysis_defaults["savgol_h"]
-        )
+        self.analysisDialog.savgolSpinBox.setToolTip(core.analysis_defaults["savgol_h"])
 
-    ## \brief This method shows the Preferences Dialog.
-    #   \sa moltenProtToolBox
-    @pyqtSlot()
+    @Slot()
     def on_showmoltenProtToolBox(self):
+        r"""
+        \brief This method shows the Preferences Dialog.
+       \sa moltenProtToolBox
+
+        """
         self.moltenProtToolBox.show()
 
-    ## \brief This metod creates QMessageBox with messageKind icon and shows message.
     def showMessage(self, message, messageKind):
+        r" \brief creates QMessageBox with messageKind icon and shows message."
         msg = QMessageBox()
         msg.setIcon(messageKind)
         msg.setText(message)
-        """
-        msg.setInformativeText("This is additional information")
-        msg.setWindowTitle("MessageBox demo")
-        msg.setDetailedText("The details are as follows:")  
-        msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-        msg.buttonClicked.connect(msgbtn)
-        retval = msg.exec_()
-        """
         msg.exec_()
 
     def __layout2widget(self, input_series):
@@ -1982,17 +2027,20 @@ class MoltenProtMainWindow(QMainWindow):
         else:
             # default value for layout is ""
             item_value = ""
-        self.layoutDialog.ui.tableWidget.setItem(
+        self.layoutDialog.tableWidget.setItem(
             row, column, QTableWidgetItem(str(item_value))
         )
 
-    ## \brief This method shows the layout from MoltenProtFitMultiple.layout in QTableWidget in LayoutDialog.
-    #   \sa LayoutDialog
     def editLayout(self):
+        r"""
+        \brief This method shows the layout from MoltenProtFitMultiple.layout in QTableWidget in LayoutDialog.
+       \sa LayoutDialog
+
+        """
         layout = self.moltenProtFitMultiple.layout.fillna("None")
         layout.apply(self.__layout2widget, axis=1)
-        self.layoutDialog.ui.tableWidget.resizeColumnsToContents()
-        self.layoutDialog.ui.tableWidget.alternatingRowColors()
+        self.layoutDialog.tableWidget.resizeColumnsToContents()
+        self.layoutDialog.tableWidget.alternatingRowColors()
         self.layoutDialog.show()
 
     def openLayout(self):
@@ -2002,7 +2050,7 @@ class MoltenProtMainWindow(QMainWindow):
         layoutFileName = QFileDialog.getOpenFileName(
             self,
             caption=self.tr("Open layout from CSV file"),
-            directory=self.lastDir,
+            dir=self.lastDir,
             filter="CSV files (*.csv)",
         )
         layoutFileName = layoutFileName[0]
@@ -2015,8 +2063,8 @@ class MoltenProtMainWindow(QMainWindow):
                     layoutFileName, index_col="ID", encoding="utf_8"
                 ).fillna("None")
                 layout.apply(self.__layout2widget, axis=1)
-                self.layoutDialog.ui.tableWidget.resizeColumnsToContents()
-                self.layoutDialog.ui.tableWidget.alternatingRowColors()
+                self.layoutDialog.tableWidget.resizeColumnsToContents()
+                self.layoutDialog.tableWidget.alternatingRowColors()
                 self.layoutDialog.show()
             else:
                 print(
@@ -2026,13 +2074,11 @@ class MoltenProtMainWindow(QMainWindow):
                 )
 
     def updateLayout(self):
-        # NOTE can also use tableWidget.rowCount()/columnCount()
-        # print self.layoutDialog.ui.tableWidget.rowCount()
-        # print self.layoutDialog.ui.tableWidget.columnCount()
-        # edit the layout of MPFM instance
+        "edit the layout of MPFM instance"
+        # TODO use tableWidget.rowCount()/columnCount()
         for column in range(0, 12):
             for row in range(0, 8):
-                item = self.layoutDialog.ui.tableWidget.item(row, column)
+                item = self.layoutDialog.tableWidget.item(row, column)
                 alphanumeric_index = "ABCDEFGH"[row] + str(column + 1)
 
                 # NOTE the layout is always 12x8, however, the data may have less samples
@@ -2061,9 +2107,10 @@ class MoltenProtMainWindow(QMainWindow):
 
     ## \brief This SLOT (in Qt terms) is called when user changes heatmap table name.
     #   \sa createComboBoxesForActionToolBar
-    @pyqtSlot()
+    @Slot()
     def on_changeInputTable(self):
-        if self.moltenProtFit != None:
+        "When the source table is changed"
+        if self.moltenProtFit is not None:
             self.on_deselectAll()
             inputTableName = self.datasetComboBox.currentText()
             if inputTableName in self.moltenProtFitMultiple.GetDatasets():
@@ -2072,7 +2119,7 @@ class MoltenProtMainWindow(QMainWindow):
                 newProtocolString = self.moltenProtFitMultiple.datasets[
                     inputTableName
                 ].protocolString
-                self.mainWindow.protocolPlainTextEdit.setPlainText(newProtocolString)
+                self.protocolPlainTextEdit.setPlainText(newProtocolString)
             else:
                 print(
                     "Unknown table name",
@@ -2101,12 +2148,16 @@ class MoltenProtMainWindow(QMainWindow):
             input_series.name,
             input_series.Condition,
             heatMapName,
-            round(input_series[heatMapName], 2,),
+            round(
+                input_series[heatMapName],
+                2,
+            ),
         )
         return output
 
     def setButtonsStyleAccordingToNormalizedData(self):
-        if self.moltenProtFit != None:
+        "Colorizes the buttons"
+        if self.moltenProtFit is not None:
             heatMapName = self.sortScoreComboBox.currentText()
             # NOTE during startup the values of the drop-down list
             # can be empty which would result in a crash
@@ -2138,13 +2189,13 @@ class MoltenProtMainWindow(QMainWindow):
     def setAllButtons(self, action, flag):
         """
         Applies a certain boolean action to all buttons in self.buttons
-        
+
         Possible actions:
         check - whether the button was clicked or not
         enable - whether the button is enabled
-        
+
         flag (bool) - true or false for action
-        
+
         """
         for button_id in core.alphanumeric_index:
             if action == "check":
@@ -2156,10 +2207,11 @@ class MoltenProtMainWindow(QMainWindow):
                 raise ValueError("Unknown action: {}".format(action))
 
     def resetButtons(self):
+        "resets the button style"
         for button_id in core.alphanumeric_index:
             self.buttons.at[button_id, "Button"].setStyleSheet(self.buttonStyleString)
 
-    @pyqtSlot()
+    @Slot()
     def on_selectAll(self):
         """
         Cycles through all buttons, checks valid buttons and updates plots and table
@@ -2176,8 +2228,9 @@ class MoltenProtMainWindow(QMainWindow):
         self.canvas.draw()
         QApplication.restoreOverrideCursor()
 
-    @pyqtSlot()
+    @Slot()
     def on_deselectAll(self):
+        "When all samples are deselected"
         # clear axes
         self.axisClear()
         self.setAllButtons("check", False)
@@ -2189,28 +2242,28 @@ class MoltenProtMainWindow(QMainWindow):
         self.resetColorCycler()
         self.canvas.draw()
 
-    @pyqtSlot()
+    @Slot()
     def on_show(self, button_id):
         """
         The main action on button click
         This method is also called:
         1) when GUI is initialized
         2) when all buttons are selected/deselected
-        
+
         checks for the validity of the button id are in respective methods (plotfig and updateTable)
-        
+
         if button clicked
             upd table
             plot the curve
         else -> button unclicked
             remove plotted curve
             remove table entry
-        
+
         Parameters
         ----------
         button_id
             alphanumeric code (e.g. A1) of the button that was clicked
-        
+
         Known issues
         ------------
         * if a button that was already clicked is unclicked, the color cycle doesn't go back. This means that upon unclicking the color used in the line of the unclicked button will not become the current color. Visually, it is somewhat inconsistent, however, one would need to somehow track the previous color and check if the button was previously clicked or not. For instance, one can keep two copies of curve cyclers, where one is one step ahead of the other
@@ -2241,7 +2294,11 @@ class MoltenProtMainWindow(QMainWindow):
         lines = self.buttons.at[button_id, "Line2D"]
         if lines is not np.nan:
             for line in lines:
-                line.remove()
+                try:
+                    line.remove()
+                except NotImplementedError:
+                    # appeared in matplotlib 3.10, not sure why this happens
+                    continue
             self.buttons.at[button_id, "Line2D"] = np.nan  # deregisters the line list
         if draw_canvas:
             # NOTE this updates the plot and may be a slow step
@@ -2258,7 +2315,7 @@ class MoltenProtMainWindow(QMainWindow):
     def updateTable(self, button_id):
         """
         Reads information from self.moltenProtFit and creates a table under the heatmap
-        
+
         Notes
         -----
         * Table widget will be made visible when the method is called for the first time
@@ -2274,7 +2331,7 @@ class MoltenProtMainWindow(QMainWindow):
             # set the number of columns in the table
             self.tableWidget.setColumnCount(len(column_dict))
 
-            if self.tableWidget.isVisible() == False:
+            if not self.tableWidget.isVisible():
                 self.tableWidget.show()
                 self.tableDockWidget.show()
 
@@ -2315,12 +2372,12 @@ class MoltenProtMainWindow(QMainWindow):
     def axisClear(self, draw_canvas=True):
         """
         Clears all available axes.
-        
+
         Parameters
         ----------
         draw_canvas: bool
             force redraw of the plot window
-            
+
         Notes
         -----
         This is not equivalent to self.fig.clear, which would remove everything from the plot window
@@ -2358,18 +2415,24 @@ class MoltenProtMainWindow(QMainWindow):
             button.setToolTip(tooltip)
 
     def createButtonArray(self, hbox):
-        ## \brief self.buttons attribute contains all information related to samples selected in the GUI heatmap and their plots
-        # index is alphanumeric ID's (similar to mp.MoltenProtFit.plate_results), but columns contain the info on the state of the GUI:
-        # Visible (bool) - whether the button should be displayed at all - can be fetched from the button object
-        # Selected (bool) - whether the user clicked on the button - can be fetched from the button object
-        # Color (str) - matplotlib-compatible color for the curve
-        # Button - reference to the respective GUI button
-        # Tooltip - information displayed when mouse is over a button
-        # Line2D - reference to the matplotlib object of the experimental line; if None, then the curve was not plotted!
-        # LineColor - the color used for the line (e.g. from colorsafe list, or the same color as the button)
+        r"""## \brief self.buttons attribute contains all information related to samples selected in the GUI heatmap and their plots
+        index is alphanumeric ID's (similar to mp.MoltenProtFit.plate_results), but columns contain the info on the state of the GUI:
+        * Visible (bool) - whether the button should be displayed at all - can be fetched from the button object
+        * Selected (bool) - whether the user clicked on the button - can be fetched from the button object
+        * Color (str) - matplotlib-compatible color for the curve
+        * Button - reference to the respective GUI button
+        * Tooltip - information displayed when mouse is over a button
+        * Line2D - reference to the matplotlib object of the experimental line; if None, then the curve was not plotted!
+        * LineColor - the color used for the line (e.g. from colorsafe list, or the same color as the button)"""
         self.buttons = pd.DataFrame(
             index=core.alphanumeric_index,
-            columns=("Button", "Color", "Tooltip", "Line2D", "LineColor",),
+            columns=(
+                "Button",
+                "Color",
+                "Tooltip",
+                "Line2D",
+                "LineColor",
+            ),
         )
         self.buttons.index.name = "ID"
 
@@ -2402,7 +2465,7 @@ class MoltenProtMainWindow(QMainWindow):
         hbox.addStretch(1)
 
     def showOnlyValidButtons(self):
-        # shows a button only if it is found in the raw data
+        "shows a button only if it is found in the raw data"
         for button_id in core.alphanumeric_index:
             if self.moltenProtFit.testWellID(button_id, ignore_results=True):
                 self.buttons.at[button_id, "Button"].show()
@@ -2410,19 +2473,19 @@ class MoltenProtMainWindow(QMainWindow):
                 self.buttons.at[button_id, "Button"].hide()
 
     def actionsSetVisible(self, show):
-        # show/hide buttons that require a dataset to be loaded
+        "show/hide buttons that require a dataset to be loaded"
         self.showHideSelectDeselectAll(show)
-        self.mainWindow.actionAnalysis.setVisible(show)
-        self.mainWindow.actionEdit_layout.setVisible(show)
-        self.mainWindow.actionSave_as_JSON.setVisible(show)
-        self.mainWindow.actionToolBar.setVisible(show)
-        self.mainWindow.actionToolBar.setEnabled(show)
-        self.mainWindow.actionShowHideProtocol.setVisible(show)
+        self.actionAnalysis.setVisible(show)
+        self.actionEdit_layout.setVisible(show)
+        self.actionSave_as_JSON.setVisible(show)
+        self.actionToolBar.setVisible(show)
+        self.actionToolBar.setEnabled(show)
+        self.actionShowHideProtocol.setVisible(show)
 
     def resetGUI(self):
-        # Make the GUI look like it was just opened:
-        # analysis options, layout etc are hidden, all buttons are not clickable
-        # This method is used when a file could not be opened
+        """ Make the GUI look like it was just opened:
+        * analysis options, layout etc are hidden, all buttons are not clickable
+        * This method is used when a file could not be opened"""
         self.actionsSetVisible(False)
         self.resetButtons()
         self.setAllButtons("enable", False)
@@ -2430,12 +2493,12 @@ class MoltenProtMainWindow(QMainWindow):
             []
         )  # with an empty list as argument the combobox will be hidden
 
-    def eventFilter(self, object, event):
+    def eventFilter(self, calling_object, event):
         """
         Event filter to handle additional button events (clicks are handled via method on_show)
         """
-        button_id = object.objectName()  # get button ID
-        if event.type() == QEvent.HoverMove or event.type()==QEvent.Enter:
+        button_id = calling_object.objectName()  # get button ID
+        if event.type() == QEvent.HoverMove or event.type() == QEvent.Enter:
             # NOTE handling non-existing/gray samples is in method plotFigAny
             if self.fileLoaded:
                 # plot new lines only if not registered
@@ -2443,11 +2506,11 @@ class MoltenProtMainWindow(QMainWindow):
                     self.plotFigAny(button_id)
                     self.canvas.draw()
             # TODO highlight the curve if it has already been selected
-            if object.isChecked():
+            if calling_object.isChecked():
                 pass
 
-        if event.type() == QEvent.HoverLeave or event.type()==QEvent.Leave:
-            if not object.isChecked():
+        if event.type() == QEvent.HoverLeave or event.type() == QEvent.Leave:
+            if not calling_object.isChecked():
                 if self.buttons.at[button_id, "Line2D"] is not np.nan:
                     # NOTE when draw_canvas is false, then the curve will be only removed when a new one is plotted, this makes hovering more smooth, however, creates "undeletable" plots
                     self.removeButtonLine2D(button_id)
@@ -2459,7 +2522,7 @@ class MoltenProtMainWindow(QMainWindow):
         """
         Plot a curve from a single well on the axes
         using the curve* set of settings and the processing status (raw or after analysis)
-        
+
         Parameters
         ----------
         wellID
@@ -2503,16 +2566,12 @@ class MoltenProtMainWindow(QMainWindow):
                     # curveBaselineCheckBoxIsChecked - yes/no baselines
 
                     # sample label is taken from the layout or well ID
+                    label = wellID
                     if self.curveLegendComboboxCurrentText == "Annotation":
                         label = self.moltenProtFit.plate_results.at[wellID, "Condition"]
-                    else:
-                        label = wellID
 
                     if self.curveTypeComboboxCurrentText == "Experimental signal":
-                        if (
-                            self.curveViewComboboxCurrentText == "Datapoints"
-                            or self.curveViewComboboxCurrentText == "Datapoints + Fit"
-                        ):
+                        if self.curveViewComboboxCurrentText in ("Datapoints", "Datapoints + Fit"):
                             lines += self.axes.plot(
                                 self.moltenProtFit.plate[wellID].index.values,
                                 self.moltenProtFit.plate[wellID],
@@ -2523,10 +2582,7 @@ class MoltenProtMainWindow(QMainWindow):
                                 color=current_color,
                             )
                             sample_label = True
-                        if (
-                            self.curveViewComboboxCurrentText == "Fit"
-                            or self.curveViewComboboxCurrentText == "Datapoints + Fit"
-                        ):
+                        if self.curveViewComboboxCurrentText in ("Fit","Datapoints + Fit"):
                             # if exp signal was plotted, do not add label to fit
                             if sample_label:
                                 lines += self.axes.plot(
@@ -2541,8 +2597,6 @@ class MoltenProtMainWindow(QMainWindow):
                                     color=current_color,
                                     label=label,
                                 )
-                            # if current_color is None:
-                            #    current_color = self.axes.get_lines()[-1].get_color()
 
                         # draw Tm/Tagg or Tons
                         lines += self.plotVlines(wellID, current_color)
@@ -2577,15 +2631,9 @@ class MoltenProtMainWindow(QMainWindow):
                                 color=current_color,
                             )
                     elif self.curveTypeComboboxCurrentText == "Baseline-corrected":
-                        if "plate_raw_corr" in self.moltenProtFit.__dict__:
-                            """
-                            NOTE In this plotting mode no fit data exists
-                            """
-                            if (
-                                self.curveViewComboboxCurrentText == "Datapoints"
-                                or self.curveViewComboboxCurrentText
-                                == "Datapoints + Fit"
-                            ):
+                        if self.moltenProtFit.plate_raw_corr is not None:
+                            # NOTE In this plotting mode no fit data exists
+                            if self.curveViewComboboxCurrentText in ("Datapoints", "Datapoints + Fit"):
                                 lines += self.axes.plot(
                                     self.moltenProtFit.plate_raw_corr[
                                         wellID
@@ -2603,11 +2651,7 @@ class MoltenProtMainWindow(QMainWindow):
                                 # draw Tm/Tagg or Tons
                                 lines += self.plotVlines(wellID, current_color)
 
-                            if (
-                                self.curveViewComboboxCurrentText == "Fit"
-                                or self.curveViewComboboxCurrentText
-                                == "Datapoints + Fit"
-                            ):
+                            if self.curveViewComboboxCurrentText in ("Fit", "Datapoints + Fit"):
                                 # show warning in the status bar that the fit is not available here
                                 self.status_text.setText(
                                     "Fit data are not available in this plotting mode"
@@ -2672,6 +2716,7 @@ class MoltenProtMainWindow(QMainWindow):
             self.curveLegendComboboxCurrentText != "None"
             and self.axesLegend is not None
         ):
+            ncol = 1
             # select column number based on the legend display mode
             if self.curveLegendComboboxCurrentText == "ID":
                 ncol = 8
@@ -2691,18 +2736,18 @@ class MoltenProtMainWindow(QMainWindow):
     def plotVlines(self, wellID, current_color):
         """
         Adds a Tm/Tagg or Tonset vertical line for wellID with color current_color based on the settings
-        
+
         Arguments
         ---------
         wellID
             ID of the sample to plot
         current_color
             which color to use
-        
+
         Returns
         -------
         A list of plotted Line2D objects
-        
+
         Notes
         -----
         Lines may have different names from different models; just use the contents of MPFit.plotlines
@@ -2730,8 +2775,8 @@ class MoltenProtMainWindow(QMainWindow):
                 )
         return out
 
-    ## \brief this method creates subplots for derivative and/or legend
     def manageSubplots(self):
+        r"    ## \brief this method creates subplots for derivative and/or legend"
         if self.dataProcessed:
             self.getPlotSettings()
             self.fig.clear()
@@ -2757,7 +2802,7 @@ class MoltenProtMainWindow(QMainWindow):
                 self.axesDerivative = None
                 self.axesLegend = None
             # remove spines from legend subplot
-            if self.axesLegend != None:
+            if self.axesLegend is not None:
                 self.axesLegend.axis("off")
             # set axes grids
             self.axes.grid(True)
@@ -2769,14 +2814,14 @@ class MoltenProtMainWindow(QMainWindow):
                 "Run analysis to enable additional plotting options"
             )
 
-    ## \brief This method shows or hides the legend.
-    @pyqtSlot()
+    @Slot()
     def on_legendChecked(self):
+        r" \brief This method shows or hides the legend."
         self.getPlotSettings()
         self.fig.clear()
         if self.curveLegendComboboxCurrentText != "None":
             # create a dedicated subplot for holding the legend
-            if self.axesDerivative != None:
+            if self.axesDerivative is not None:
                 self.axes = self.fig.add_subplot(3, 1, 1)
                 self.axesDerivative = self.fig.add_subplot(3, 1, 2)
                 self.axesLegend = self.fig.add_subplot(3, 1, 3)
@@ -2787,45 +2832,42 @@ class MoltenProtMainWindow(QMainWindow):
         else:
             # remove existing legend
             if self.axesLegend is not None:
-                if self.axesDerivative != None:
+                if self.axesDerivative is not None:
                     self.axes = self.fig.add_subplot(2, 1, 1)
                     self.axesDerivative = self.fig.add_subplot(2, 1, 2)
                 else:
                     self.axes = self.fig.add_subplot(1, 1, 1)
 
-    @pyqtSlot()
+    @Slot()
     def on_curveBaselineCheckBoxChecked(self):
+        "Prints status of curve baseline checkbox"
         if showVersionInformation:
             print(
                 "on_curveBaselineCheckBoxChecked",
-                self.moltenProtToolBox.ui.curveBaselineCheckBox.isChecked(),
+                self.moltenProtToolBox.curveBaselineCheckBox.isChecked(),
                 cfFilename,
                 currentframe().f_lineno,
             )
 
     def createMatplotlibStuff(self):
+        "Embeds matplotlib elements in the GUI"
         self.main_frame = QWidget()
         self.fig = Figure()
         self.axes = self.fig.add_subplot()
         self.axes.grid(True)
         self.canvas = FigureCanvas(self.fig)
-        # print(type(self.canvas),  currentframe().f_lineno,  cfFilename)
         self.canvas.setParent(self.main_frame)
-        # Create matplolib toolbar as a Qt object
-        # self.mpl_toolbar = NavigationToolbar(self.canvas, self.main_frame)
-
         left_vbox = QVBoxLayout()
         left_vbox.addWidget(self.canvas)
         self.main_frame.setLayout(left_vbox)
 
     def addDerivativeSublot(self):
+        "Add a subplot to show the derivative"
         self.axesDerivative = self.fig.add_subplot(2, 1, 2)
 
-    ## \brief This method is no unused.
     def createMatplotlibContextMenu(self):
-        # show context menu of matplolib window, show/hide legend, show/hide derivative plot
+        "show context menu of matplolib window, show/hide legend, show/hide derivative plot - currently not used"
         self.main_frame.setContextMenuPolicy(Qt.ActionsContextMenu)
-
         # show/hide legend
         # self.showLegendAction = QAction("Show legend",  self.main_frame)
         # self.showLegendAction.setCheckable(True)
@@ -2841,27 +2883,21 @@ class MoltenProtMainWindow(QMainWindow):
         # self.main_frame.addAction(self.showLegendAction)
         # self.main_frame.addAction(self.showDerivativeSubplotAction)
 
-    ## \brief This method assignes to  the stackable window heatmap.
-    def createHeatmapDockWidget(self, heatmapTitle="Heatmap"):
-        """
-        heatmapDockWidget = QDockWidget(self)
-        heatmapDockWidget.setWindowTitle(heatmapTitle)
-        heatmapDockWidget.setAllowedAreas(Qt.LeftDockWidgetArea|Qt.RightDockWidgetArea)
-        heatmapDockWidget.setObjectName("heatmapDockWidget")
-        self.addDockWidget(Qt.DockWidgetArea(1), heatmapDockWidget)
-        """
-        heatmapDockWidget = self.mainWindow.heatmapDockWidget
+    def createHeatmapDockWidget(self):
+        r"## \brief This method assignes to  the stackable window heatmap."
+        heatmapDockWidget = self.heatmapDockWidget
         return heatmapDockWidget
 
     def createHeatmapButtons(self):
-        # Create buttons in the dockable heatmap widget
+        "Create buttons in the dockable heatmap widget"
         self.dockButtonsFrame = QWidget(self.heatmapDockWidgetContents)
         hbox = QHBoxLayout()
         self.createButtonArray(hbox)
         self.dockButtonsFrame.setLayout(hbox)
 
-    ## \brief This method creates sortScoreComboBox and datasetComboBox, sets tooltips for them
+    
     def createComboBoxesForActionToolBar(self):
+        r'## \brief This method creates sortScoreComboBox and datasetComboBox, sets tooltips for them'
         ## \brief  This attribute holds the sortScoreComboBox.
         self.sortScoreComboBox = QComboBox()
         self.sortScoreComboBox.setToolTip("Select sort score")
@@ -2874,13 +2910,12 @@ class MoltenProtMainWindow(QMainWindow):
         self.datasetComboBox.currentIndexChanged.connect(self.on_changeInputTable)
         self.heatmapMultipleListView = QListView(self.datasetComboBox)
         self.datasetComboBox.setView(self.heatmapMultipleListView)
-        self.datasetComboBoxAction = self.mainWindow.actionToolBar.addWidget(
-            self.datasetComboBox
-        )
+        self.datasetComboBoxAction = self.actionToolBar.addWidget(self.datasetComboBox)
 
     def createColorMapComboBox(self):
-        self.colorMapComboBox = self.moltenProtToolBox.ui.colormapForPlotComboBox
-        self.moltenProtToolBox.ui.colormapForPlotLabel.hide()
+        "Initializes colormap combobox widget"
+        self.colorMapComboBox = self.moltenProtToolBox.colormapForPlotComboBox
+        self.moltenProtToolBox.colormapForPlotLabel.hide()
         self.colorMapComboBox.hide()
         self.colorMapComboBox.insertItems(1, self.colorMapNames)
         index = int(
@@ -2889,21 +2924,24 @@ class MoltenProtMainWindow(QMainWindow):
             )
         )
         self.colorMapComboBox.currentIndexChanged.connect(self.on_changeColorMap)
-        self.moltenProtToolBox.ui.colormapForPlotComboBox.setCurrentIndex(index)
+        self.moltenProtToolBox.colormapForPlotComboBox.setCurrentIndex(index)
 
-    @pyqtSlot()
+    @Slot()
     def on_changeColorMap(self):
+        "Actions when color map is changed"
         self.currentColorMapIndex = self.colorMapComboBox.currentIndex()
         self.currentColorMap = self.colorMapNames[self.currentColorMapIndex]
         self.on_deselectAll()  # TODO can this be avoided?
-        if self.moltenProtFit != None:
+        if self.moltenProtFit is not None:
             self.setButtonsStyleAccordingToNormalizedData()
 
-    ## \brief This method adds  self.sortScoreComboBox to self.mainWindow.actionToolBar if it was not already added. Then clears items in it, populates self.sortScoreComboBox by
-    #   self.moltenProtFit.getResultsColumns() method and shows it. \sa core.MoltenProtFit.getResultsColumns() \sa sortScoreComboBox
     def populateAndShowSortScoreComboBox(self):
-        if self.sortScoreCombBoxAction == None:
-            self.sortScoreCombBoxAction = self.mainWindow.actionToolBar.addWidget(
+        r"""
+             \brief This method adds  self.sortScoreComboBox to self.actionToolBar if it was not already added. Then clears items in it, populates self.sortScoreComboBox by self.moltenProtFit.getResultsColumns() method and shows it. \sa core.MoltenProtFit.getResultsColumns() \sa sortScoreComboBox
+
+        """
+        if self.sortScoreCombBoxAction is None:
+            self.sortScoreCombBoxAction = self.actionToolBar.addWidget(
                 self.sortScoreComboBox
             )
         self.sortScoreComboBox.clear()
@@ -2912,32 +2950,32 @@ class MoltenProtMainWindow(QMainWindow):
         self.sortScoreComboBox.setMinimumWidth(width)
         self.sortScoreCombBoxAction.setVisible(True)
 
-    ## \brief This method creates MoltenProt GUI application main window.
-    #   \details
-    #   This method:
-    #   - Creates Matplotlib GUI elements.
-    #   - Creates MoltenProt MainWindow and set Matplotlib main_frame as CentralWidget.
-    #   - Creates ComboBoxes for ActionToolBar via createComboBoxesForActionToolBar method. \sa createComboBoxesForActionToolBar
     def createMainWindow(self):
+        r"""
+            # \brief This method creates MoltenProt GUI application main window.
+      \details
+      This method:
+      - Creates Matplotlib GUI elements.
+      - Creates MoltenProt MainWindow and set Matplotlib main_frame as CentralWidget.
+      - Creates ComboBoxes for ActionToolBar via createComboBoxesForActionToolBar method. \sa createComboBoxesForActionToolBar
+
+        """
         self.fileLoaded = False
         self.dataProcessed = False
         self.createMatplotlibStuff()
-        uifile = QFile(":/main.ui")
-        uifile.open(QFile.ReadOnly)
-        self.mainWindow = uic.loadUi(uifile, self)
-        uifile.close()
+        # self = load_uic(":/main.ui", self)         # no effect in PySide6
         self.setCentralWidget(self.main_frame)
         self.createComboBoxesForActionToolBar()
-        self.mainWindow.actionToolBar.setVisible(False)
-        self.mainWindow.actionToolBar.setEnabled(False)
+        self.actionToolBar.setVisible(False)
+        self.actionToolBar.setEnabled(False)
 
-        self.heatmapDockWidgetContents = QWidget(self.mainWindow.heatmapDockWidget)
+        self.heatmapDockWidgetContents = QWidget(self.heatmapDockWidget)
         self.heatmapDockWidgetContents.setObjectName("heatmapDockWidgetContents")
-        self.mainWindow.heatmapDockWidget.setWidget(self.heatmapDockWidgetContents)
+        self.heatmapDockWidget.setWidget(self.heatmapDockWidgetContents)
 
-        self.mainWindow.tableDockWidget.hide()
-        self.tableDockWidget = self.mainWindow.tableDockWidget
-        tableWidget = self.mainWindow.tableWidget
+        self.tableDockWidget.hide()
+        self.tableDockWidget = self.tableDockWidget
+        tableWidget = self.tableWidget
         tableWidget.setColumnCount(5)  # ATTENTION has to be set dynamically
         header = tableWidget.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -2946,52 +2984,44 @@ class MoltenProtMainWindow(QMainWindow):
         tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
         tableWidget.hide()
         self.tableWidget = tableWidget
-        self.mainWindow.heatmapDockWidget.setMinimumWidth(560)
+        self.heatmapDockWidget.setMinimumWidth(560)
         # Hide the Protocol DockWidget
-        self.mainWindow.protocolDockWidget.setVisible(False)
+        self.protocolDockWidget.setVisible(False)
 
         # self.createColormap()
         self.createHeatmapButtons()
         self.connectSignals2Actions()
-        self.mainWindow.actionSave_as_JSON.setVisible(False)
+        self.actionSave_as_JSON.setVisible(False)
 
         self.font = QFont("Arial", 10)
 
     def connectSignals2Actions(self):
-        self.mainWindow.actionNew.triggered.connect(self.on_actionNewTriggered)
-        self.mainWindow.actionLoad.triggered.connect(self.on_loadFile)
-        self.mainWindow.actionLoad_sample_data.triggered.connect(
-            self.on_actionLoad_sample_data
-        )
-        self.mainWindow.actionSave_as_JSON.triggered.connect(
-            self.on_actionSave_as_JSONTriggered
-        )
-        self.mainWindow.actionQuit.triggered.connect(self.on_closeMoltenProtMainWindow)
-        self.mainWindow.actionAbout.triggered.connect(self.on_actionAbout)
-        self.mainWindow.actionCite_MoltenProt.triggered.connect(
-            self.on_actionCite_MoltenProt
-        )
-        self.mainWindow.actionHelp.triggered.connect(self.on_actionHelp)
-        self.mainWindow.actionAnalysis.triggered.connect(
-            self.on_analysisPushButtonClicked
-        )
-        self.mainWindow.actionActions.triggered.connect(self.on_showmoltenProtToolBox)
-        self.mainWindow.actionExport.triggered.connect(self.on_exportResults)
-        self.mainWindow.actionDeselectAll.triggered.connect(self.on_deselectAll)
-        self.mainWindow.actionSelectAll.triggered.connect(self.on_selectAll)
-        self.mainWindow.actionEdit_layout.triggered.connect(self.editLayout)
-        self.mainWindow.actionPrtSc.triggered.connect(self.on_saveMainWindowAsPng)
-        self.mainWindow.actionShowHideProtocol.triggered.connect(
-            self.on_actionShowHideProtocol
-        )
-        self.mainWindow.actionFont.triggered.connect(self.on_actionFontTriggered)
+        "Connects callback methods to Qt actions"
+        self.actionNew.triggered.connect(self.on_actionNewTriggered)
+        self.actionLoad.triggered.connect(self.on_loadFile)
+        self.actionLoad_sample_data.triggered.connect(self.on_actionLoad_sample_data)
+        self.actionSave_as_JSON.triggered.connect(self.on_actionSave_as_JSONTriggered)
+        self.actionQuit.triggered.connect(self.on_closeMoltenProtMainWindow)
+        self.actionAbout.triggered.connect(self.on_actionAbout)
+        self.actionCite_MoltenProt.triggered.connect(self.on_actionCite_MoltenProt)
+        self.actionHelp.triggered.connect(self.on_actionHelp)
+        self.actionAnalysis.triggered.connect(self.on_analysisPushButtonClicked)
+        self.actionActions.triggered.connect(self.on_showmoltenProtToolBox)
+        self.actionExport.triggered.connect(self.on_exportResults)
+        self.actionDeselectAll.triggered.connect(self.on_deselectAll)
+        self.actionSelectAll.triggered.connect(self.on_selectAll)
+        self.actionEdit_layout.triggered.connect(self.editLayout)
+        self.actionPrtSc.triggered.connect(self.on_saveMainWindowAsPng)
+        self.actionShowHideProtocol.triggered.connect(self.on_actionShowHideProtocol)
+        self.actionFont.triggered.connect(self.on_actionFontTriggered)
 
-    @pyqtSlot()
+    @Slot()
     def on_closeMoltenProtMainWindow(self):
+        "Callback for closing the main window; will check if any export threads are still running"
         msg = QMessageBox(self)
         msg.setFont(self.font)
         msg.setWindowTitle("MoltenProt")
-        if self.threadIsWorking == True:
+        if self.threadIsWorking:
             msg.setIcon(QMessageBox.Information)
             msg.setText("Some thread is still running. Please try later.")
             msg.setStandardButtons(QMessageBox.Ok)
@@ -3005,10 +3035,11 @@ class MoltenProtMainWindow(QMainWindow):
                 self.close()
 
     def closeEvent(self, event):
+        "Handling threading events"
         msg = QMessageBox()
         msg.setFont(self.font)
         msg.setWindowTitle("MoltenProt")
-        if self.threadIsWorking == True:
+        if self.threadIsWorking:
             msg.setIcon(QMessageBox.Information)
             msg.setText("Some thread is still running. Please try later.")
             msg.setStandardButtons(QMessageBox.Ok)
@@ -3026,55 +3057,141 @@ class MoltenProtMainWindow(QMainWindow):
                 else:
                     event.ignore()
 
-    @pyqtSlot()
+    @Slot()
     def on_actionShowHideProtocol(self):
-        self.mainWindow.protocolDockWidget.setVisible(
-            self.mainWindow.actionShowHideProtocol.isChecked()
-        )
+        "Callback for hide/show protocol window"
+        self.protocolDockWidget.setVisible(self.actionShowHideProtocol.isChecked())
         # read protocol from the currently viewed MoltenProtFit instance
         if self.moltenProtFit is not None:
-            self.mainWindow.protocolPlainTextEdit.setPlainText(
-                self.moltenProtFit.protocolString
-            )
+            self.protocolPlainTextEdit.setPlainText(self.moltenProtFit.protocolString)
 
     def connectButtonsFromLayoutDialog(self):
+        "Sets up callbacks for layout dialog buttons"
         # if OK clicked - update layout as it is
-        self.layoutDialog.ui.buttonBox.button(QDialogButtonBox.Ok).clicked.connect(
+        self.layoutDialog.buttonBox.button(QDialogButtonBox.Ok).clicked.connect(
             self.updateLayout
         )
         # NOTE Save button is redundant
-        # self.layoutDialog.ui.buttonBox.button(QDialogButtonBox.Save).clicked.connect(self.saveLayout)
+        # self.layoutDialog.buttonBox.button(QDialogButtonBox.Save).clicked.connect(self.saveLayout)
         # Open button allow loading an external layout file and applying it to the MPFM instance
-        self.layoutDialog.ui.buttonBox.button(QDialogButtonBox.Open).clicked.connect(
+        self.layoutDialog.buttonBox.button(QDialogButtonBox.Open).clicked.connect(
             self.openLayout
         )
         # a button to restore original layout
-        self.layoutDialog.ui.buttonBox.button(QDialogButtonBox.Reset).clicked.connect(
+        self.layoutDialog.buttonBox.button(QDialogButtonBox.Reset).clicked.connect(
             self.resetLayout
         )
 
     def layoutTableCellClicked(self, row, column):
+        "Prints row and columns clicked in the layout table"
         if showVersionInformation:
             print(row, column, currentframe().f_lineno, cfFilename)
 
     def createStatusBar(self):
+        "initializes the status bar"
         self.status_text = QLabel("Please load a data file")
         self.statusBar().addWidget(self.status_text, 1)
-
-    @pyqtSlot()
+    
+    @Slot()
     def on_saveMainWindowAsPng(self):
-        pixMap = QApplication.primaryScreen().grabWindow(self.winId())
-        filename = QFileDialog.getSaveFileName(
+        "Callback when saving the window screenshot"
+        filename, _ = QFileDialog.getSaveFileName(
             self,
             caption=self.tr("Enter png file name "),
-            directory=self.lastDir,
+            dir=self.lastDir,
             filter="png Files (*.png)",
-        )[0]
-        # add PNG suffix if needed
-        if filename[-4:] != ".png":
-            filename += ".png"
-        pixMap.save(filename, "PNG")
+        ) # the 2nd return value is the selected filter
+        # NOTE file name has zero length only when user pressed Cancel
+        if len(filename) > 0:
+            #pixMap = QApplication.primaryScreen().grabWindow(self.winId())
+            pixMap = self.grab() # this method will also work with wayland
+            if pixMap.isNull():
+                QMessageBox.warning(self, "MoltenProt Error", "Could not generate app screenshot")
+            else:
+                # add PNG suffix if needed
+                if filename[-4:] != ".png":
+                    filename += ".png"
+                pixMap.save(filename, format=None)
 
     def setExpertMode(self):
+        "Callback for setting the expert mode - currently not implemented"
         if showVersionInformation:
             print("setExpertMode")
+
+
+def LaunchMoltenprotGUI(localizationStuffFlag=False):
+    r"""
+    Below is doxygen documentation code.
+    \brief Start up the GUI of MoltenProt
+        \details
+    - Create Qt GUI application.
+    - Create and show splashscreen.
+    - Create MoltenProtMainWindow class instance and set it size and placement.
+    - Run GUI MoltenProt application.
+    \sa moltenprotgui.MoltenProtMainWindow
+        \param localizationStuffFlag - If True use Qt internationalization facilities.
+        \todo TODO list for MoltenprotGUI.
+
+    Some tricks for the GUI to supprot Hi-DPI displays, see below for more info:
+    https://stackoverflow.com/questions/41331201/pyqt-5-and-4k-screen
+    https://doc.qt.io/qt-5/highdpi.html
+    """
+    os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+    app = QApplication(sys.argv)
+
+    splashPixmap = QPixmap(":/splash.png")
+    splash = QSplashScreen(splashPixmap)
+    splash.setEnabled(False)
+    # adding progress bar
+    progressBar = QProgressBar(splash)
+    progressBar.setMaximum(10)
+    progressBar.setGeometry(0, splashPixmap.height() - 50, splashPixmap.width(), 20)
+    splash.show()
+    for i in range(1, 11):
+        progressBar.setValue(i)
+        t = time.time()
+        while time.time() < t + 0.1:
+            app.processEvents()
+
+    if localizationStuffFlag:
+        # Localization stuff
+        locale = QLocale.system().name()
+        print(locale)
+        qtTranslator = QTranslator()
+        # if qtTranslator.load("qt_" + locale, ":/"):
+        if qtTranslator.load("qt_ru", ":/"):
+            app.installTranslator(qtTranslator)
+        else:
+            print("Failed to load locale")
+        appTranslator = QTranslator()
+        if appTranslator.load("moltenprot_ru", ":/"):
+            app.installTranslator(appTranslator)
+        else:
+            print("Failed to load application locale.")
+    else:
+        pass  # Localization not implemented
+    app.setOrganizationName("MoltenProt")
+    app.setApplicationName("moltenprot")
+    app.setWindowIcon(QIcon(":/MP_icon.png"))
+    # print app.arguments()
+    moltenProtMainWindow = MoltenProtMainWindow()
+
+    width = int(moltenProtMainWindow.width())
+    height = int(moltenProtMainWindow.height())
+    screen_size = app.primaryScreen().availableSize()
+    screenWidth = int(screen_size.width())
+    screenHeight = int(screen_size.height())
+    moltenProtMainWindow.setGeometry(
+        int((screenWidth / 2) - (width / 2)),
+        int((screenHeight / 2) - (height / 2)),
+        width,
+        height,
+    )
+
+    # forces main window decorator on Windows
+    moltenProtMainWindow.setWindowFlags(Qt.Window)
+    moltenProtMainWindow.show()
+    # Hide splashscreen
+    splash.finish(moltenProtMainWindow)
+    app.exec_()

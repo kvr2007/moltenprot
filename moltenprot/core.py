@@ -1,33 +1,55 @@
-"""
-Copyright 2018-2021 Vadim Kotov, Thomas C. Marlovits
-
-    This file is part of MoltenProt.
-
-    MoltenProt is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    MoltenProt is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with MoltenProt.  If not, see <https://www.gnu.org/licenses/>.
-"""
-### Citation
-# a simple dict with strings that provide different citation formatting
-citation = {
-    "long": "\nIf you found MoltenProt helpful in your work, please cite:\nKotov et al., Protein Science (2021)\ndoi: 10.1002/pro.3986\n",
-    "html": """<p>If you found MoltenProt helpful in your work, please cite: </p> 
-                      <p>Kotov et al., Protein Science (2021)</p>
-                      <p><a href="https://dx.doi.org/10.1002/pro.3986">doi: 10.1002/pro.3986</a></p>""",
-    "short": "Citation: Kotov et al., Protein Science (2021) doi: 10.1002/pro.3986",
-}
+"Core functionality of MoltenProt"
+# Copyright 2018-2021,2025 Vadim Kotov, Thomas C. Marlovits
+# 
+#     This file is part of MoltenProt.
+# 
+#     MoltenProt is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+# 
+#     MoltenProt is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+# 
+#     You should have received a copy of the GNU General Public License
+#     along with MoltenProt.  If not, see <https://www.gnu.org/licenses/>.
 
 
 ### Modules
+from io import StringIO
+
+# for generating htmls
+from string import Template
+
+# For printing line number and file name
+from inspect import currentframe, getframeinfo
+
+# handling exceptions
+import sys
+
+# creating folders
+import os
+
+# function to recognize module versions
+try:
+    from distutils.version import LooseVersion
+except ModuleNotFoundError:
+    # happens in Python >=3.12
+    from packaging.version import parse as LooseVersion
+
+# saving class instances to JSON format
+import json
+
+# for compression of output JSON
+# import gzip
+# for timestamps
+from time import strftime
+
+# data processing
+import pandas as pd
+
 # some useful mathematical functions
 import numpy as np
 
@@ -40,9 +62,6 @@ from scipy.signal import medfilt
 # interpolation
 from scipy.interpolate import interp1d
 
-# for generating htmls
-from string import Template
-
 # plotting
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
@@ -50,34 +69,23 @@ from matplotlib import gridspec
 # for color conversion
 from matplotlib.colors import rgb2hex
 
-# For printing line number and file name
-from inspect import currentframe, getframeinfo
+# import the fitting models
+from . import models
 
+# for debug
 cf = currentframe()
 cfFilename = getframeinfo(cf).filename
 
-# handling exceptions
-import sys
+### Citation
+# a simple dict with strings that provide different citation formatting
+citation = {
+    "long": "\nIf you found MoltenProt helpful in your work, please cite:\nKotov et al., Protein Science (2021)\ndoi: 10.1002/pro.3986\n",
+    "html": """<p>If you found MoltenProt helpful in your work, please cite: </p> 
+                      <p>Kotov et al., Protein Science (2021)</p>
+                      <p><a href="https://dx.doi.org/10.1002/pro.3986">doi: 10.1002/pro.3986</a></p>""",
+    "short": "Citation: Kotov et al., Protein Science (2021) doi: 10.1002/pro.3986",
+}
 
-# data processing
-import pandas as pd
-
-# creating folders
-import os
-
-# function to recognize module versions
-from distutils.version import LooseVersion
-
-# saving class instances to JSON format
-import json
-
-# for compression of output JSON
-# import gzip
-# for timestamps
-from time import strftime
-
-# import the fitting models
-from . import models
 
 # A variable for reliable access to other resources of MoltenProt (e.g. report template)
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -90,12 +98,8 @@ with open(os.path.join(__location__, "VERSION"), "r") as version_file:
 # get scipy version (some methods may not be available in earlier versions)
 scipy_version = sys.modules["scipy"].__version__
 
-# check if running from a PyInstaller bundle
-if hasattr(sys, "frozen") and hasattr(sys, "_MEIPASS"):
-    # print("Running from a PyInstaller bundle")
-    from_pyinstaller = True
-else:
-    from_pyinstaller = False
+# check if running from a PyInstaller bundle https://pyinstaller.org/en/stable/runtime-information.html
+from_pyinstaller = getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
 
 # for parallel processing of some for loops using joblib (may hang up)
 try:
@@ -204,9 +208,9 @@ defaults = {
 # dictionary with avialble models
 # NOTE to be automatically identified the model has to be subclass or subsubclass of MoltenProtModel
 avail_models = {}
-for model in models.MoltenProtModel.__subclasses__():
-    avail_models[model.short_name] = model  # subclass of MoltenProtModel
-    for submodel in model.__subclasses__():  # subsubclass of MoltenProtModel
+for model_obj in models.MoltenProtModel.__subclasses__():
+    avail_models[model_obj.short_name] = model_obj  # subclass of MoltenProtModel
+    for submodel in model_obj.__subclasses__():  # subsubclass of MoltenProtModel
         avail_models[submodel.short_name] = submodel
 
 # add a dummy model to indicate that the dataset should not be analysed
@@ -215,11 +219,11 @@ avail_models["skip"] = "skip"
 ### Utility functions
 
 
-def normalize(input, new_min=0, new_max=1, from_input=False):
+def normalize(inseries:pd.Series, new_min=0, new_max=1, from_input=False) -> pd.Series:
     """Helper function to normalize a pandas Series
-    
+
     Make the data occupy a specified range (defined by new_min and new_max)
-    
+
     Parameters
     ----------
     input : pd.Series
@@ -229,7 +233,7 @@ def normalize(input, new_min=0, new_max=1, from_input=False):
     from_input : bool
         use absolute vales of min/max of the input series to create normalization range
         this is used to perform inversion of curves (mirror around X-axis)
-    
+
     References
     ----------
     The general formula for normalization is from here:
@@ -237,29 +241,29 @@ def normalize(input, new_min=0, new_max=1, from_input=False):
     """
 
     if from_input:
-        new_min = min(abs(input))
-        new_max = max(abs(input))
+        new_min = min(abs(inseries))
+        new_max = max(abs(inseries))
 
-    input = (input - input.min()) * (new_max - new_min) / (
-        input.max() - input.min()
+    inseries = (inseries - inseries.min()) * (new_max - new_min) / (
+        inseries.max() - inseries.min()
     ) + new_min
 
-    return input
+    return inseries
 
 
-def to_odd(input, step):
+def to_odd(inval:float, step:float):
     """Helper function to convert the window length in temperature units to an odd number of datapoints
-    
+
     NOTE for user's simplicity the window size is specified in temperature units
     for filters, however, an odd integer is needed
-    
+
     Parameters
     ----------
     input : float
         number in degrees to convert to a number of datapoints
     step : float
         temperature step in the dataset
-        
+
     Returns
     -------
     float
@@ -268,22 +272,22 @@ def to_odd(input, step):
     """
 
     # calculate the approximate amount of datapoints corresponding to the range
-    input = input / step
+    inval = inval / step
     # convert input to an integer
-    input = int(input)
+    inval = int(inval)
     # if it can be divided by 2 without the remainder (Euclidean division)
     # than it is even and needs to become odd
     # % computes the remainder from Euclidean division
     # the complementary operator is //
-    if not input % 2:
-        input = input + 1
-    return input
+    if not inval % 2:
+        inval = inval + 1
+    return inval
 
 
 def analysis_kwargs(input_dict):
     """
     Takes a dict and returns a valid argument dict for SetAnalysisOptions
-    Unknown options are removed, default values are supplied 
+    Unknown options are removed, default values are supplied
     """
     output = {}
     for i, j in input_dict.items():
@@ -310,7 +314,7 @@ def showVersionInformation():
 def mp_read_excel(filename, sheetname, index_col):
     """
     Read XLSX files to pandas DataFrames and return None if errors occur
-    
+
     Parameters
     ----------
     filename
@@ -319,7 +323,7 @@ def mp_read_excel(filename, sheetname, index_col):
         which sheet to read from file
     index_col
         which column to use as index
-    
+
     Returns
     -------
     pd.DataFrame from Excel file or None if reading failed
@@ -358,7 +362,7 @@ def serialize(obj):
                 force_ascii=False, double_precision=15, orient="split"
             )
         }
-    elif isinstance(obj, MoltenProtFit):
+    if isinstance(obj, MoltenProtFit):
         output = obj.__dict__
         # delete some method descriptions (only needed for parallel processing)
         if "plotfig" in output:
@@ -370,7 +374,7 @@ def serialize(obj):
 
         output = {"MoltenProtFit": output}
         return output
-    elif isinstance(obj, MoltenProtFitMultiple):
+    if isinstance(obj, MoltenProtFitMultiple):
         output = obj.__dict__
         # a better way to query a dict, see:
         # https://docs.quantifiedcode.com/python-anti-patterns/correctness/not_using_get_to_return_a_default_value_from_a_dictionary.html
@@ -385,12 +389,12 @@ def serialize(obj):
             "version": __version__,
             "timestamp": strftime("%c"),
         }
-
+    return obj
 
 def deserialize(input_dict):
     """
     Helper function to deserialize MoltenProtFit instances and DataFrames from JSON files (read into a dict)
-    
+
     If the object contains any plate_ entries, cycle through them and convert to DataFrames
     also applies to the layout entry (again, a DataFrame)
     """
@@ -401,7 +405,7 @@ def deserialize(input_dict):
         output = MoltenProtFit(None, input_type="from_dict")
         output.__dict__.update(input_dict["MoltenProtFit"])
         return output
-    elif input_dict.get("MoltenProtFitMultiple"):
+    if input_dict.get("MoltenProtFitMultiple"):
         # this level also has version info and timestamp
         # NOTE if needed, this section can be used to discard too old JSON sessions
         if input_dict.get("version") and input_dict.get("timestamp"):
@@ -421,8 +425,10 @@ def deserialize(input_dict):
         # set layouts in all datasets
         output.UpdateLayout()
         return output
-    elif input_dict.get("DataFrame"):
-        return pd.read_json(input_dict["DataFrame"], precise_float=True, orient="split")
+    if input_dict.get("DataFrame"):
+        return pd.read_json(
+            StringIO(input_dict["DataFrame"]), precise_float=True, orient="split"
+        )
     return input_dict
 
 
@@ -432,7 +438,7 @@ def deserialize(input_dict):
 class MoltenProtFit:
     """
     Stores and analyses a single dataset
-    
+
     Attributes
     ----------
     defaults : dict
@@ -453,8 +459,8 @@ class MoltenProtFit:
     blanks - blank wells (subtracted prior to analysis) -> now part of SetAnalysisOptions
     exclude - supplied by user through --exclude option -> now part of SetAnalysisOptions
     bad_Tm - the melting temperature is out of range of T
-    readout_type - the signal in the assay 
-    
+    readout_type - the signal in the assay
+
     Notes
     -----
     This is an internal class, do not create it manually.
@@ -559,10 +565,10 @@ class MoltenProtFit:
                 > csv - default value, corresponds to the standard csv file
                 > from_xlsx - means that the instance of MoltenProtFit is being created by MoltenProtFitMultiple, input will be a ready-to-use DataFrame
         parent_filename
-            the filename of the original xlsx file 
+            the filename of the original xlsx file
         readout_type
             the name of the readout (for plot Y-axis)
-        
+
         Notes
         -----
         """
@@ -574,6 +580,30 @@ class MoltenProtFit:
             self.debug = True
         else:
             self.debug = debug
+
+        # define attributes
+        self.plotlines = None
+        self.plate_derivative = None
+        self.plate_binned = None
+        self.dCp = None
+        self.layout = None
+        self.trim_min = None
+        self.trim_max = None
+        self.shrink = None
+        self.mfilt = None
+        self.exclude = None
+        self.blanks = None
+        self.savgol = None
+        # current value for onset_threshold (used in santoro1988(d) to obtain values of T_onset)
+        self.onset_threshold = 0.01
+        self.model = None
+        self.plate_fit = None
+        self.plate_raw_corr = None
+        self.baseline_fit = None
+        self.baseline_bounds = None
+        self.invert = None
+        self.plate_results = None
+        self.plate_results_stdev = None
 
         if input_type == "from_dict":
             # this would return an empty object
@@ -654,27 +684,29 @@ class MoltenProtFit:
     def converter96(self, use_column, reference=None):
         """
         Reads self.plate_results with well ID in the index (A1, A2 etc) and some values in columns (Tm_fit, etc) and returns a DataFrame emulating a 96-well plate where each well has a normalized respective column value.
-        
+
         Parameters
         ----------
         use_column
             which column to use in self.plate_results
         reference
             well to use as reference
-        
+
         Notes
         -----
         Normalization is done based on lowerbetter information from self.hm_dic:
         1 - means the highest possible value and the best value as well
         0 - means the worst and the lowest possible value
-        
+
         If a reference is supplied, it is subtracted from the data
         Reference code _was not maintained_ for a while and is probably faulty!
         """
 
         # create a DataFrame emulating a 96-well plate
         output = pd.DataFrame(
-            index=["A", "B", "C", "D", "E", "F", "G", "H"], columns=list(range(1, 13))
+            index=["A", "B", "C", "D", "E", "F", "G", "H"],
+            columns=list(range(1, 13)),
+            dtype=np.float32,
         )
 
         # check if the use_column value is a valid one
@@ -690,7 +722,9 @@ class MoltenProtFit:
                 if (use_column in self.plate_results.columns) and (
                     a in self.plate_results.index
                 ):
-                    output.loc[[i], [j]] = self.plate_results.loc[a, use_column]
+                    output.loc[[i], [j]] = np.float32(
+                        self.plate_results.loc[a, use_column]
+                    )
 
         # if reference value is supplied, subtract it from the values
         if reference is not None:
@@ -730,7 +764,7 @@ class MoltenProtFit:
         else:
             output = (output - min_val) / (max_val - min_val)
         # make all Nan's equal to 1000
-        output.fillna(1000, inplace=True)
+        output.fillna(1000.0, inplace=True)
         return output
 
     def heatmap(
@@ -747,7 +781,7 @@ class MoltenProtFit:
     ):
         """
         Create a heatmap
-        
+
         Parameters
         ----------
         output_path
@@ -823,7 +857,8 @@ class MoltenProtFit:
             heatmap_axis = fig.gca()
             axis_aspect = ["equal", "box"]
         fig.suptitle(
-            title, fontweight="bold",
+            title,
+            fontweight="bold",
         )
         # create the heatmap
         # NOTE in some rare cases when the heatmap consists of a single sample matplotlib will raise a warning:
@@ -885,7 +920,7 @@ class MoltenProtFit:
     def print_message(self, text, message_type):
         """
         Prints messages and saves them to protocolString
-        
+
         Parameters
         ----------
         text
@@ -896,9 +931,9 @@ class MoltenProtFit:
 
         # line No and file name are only printed in debug mode and only for Fatals and Warnings
         if self.debug and (message_type != "i"):
-            cf = currentframe()
-            cfFilename = getframeinfo(cf).filename
-            print("Line {}, in file {}".format(cf.f_back.f_lineno, cfFilename))
+            curr_frame = currentframe()
+            curr_file = getframeinfo(curr_frame).filename
+            print("Line {}, in file {}".format(curr_frame.f_back.f_lineno, curr_file))
         if message_type == "f":
             print("Fatal: " + text + " ({})".format(self.readout_type))
             sys.exit(1)
@@ -918,7 +953,7 @@ class MoltenProtFit:
     def _calculate_raw_corr(self):
         """
         Compute baseline-corrected raw data; requires presence of kN, bN, kU, bU in plate_results
-        
+
         Notes
         -----
         calculate fraction unfolded (funf)
@@ -929,7 +964,7 @@ class MoltenProtFit:
         where T is temperature, F(T) assay signal, Fu and Fn - baseline signal
         funf - fraction unfolded; fnat - fraction native
         whichever formula is used for calculation, the result is the same
-        
+
         TODO: the same calculation using plate_fit can be done to yield "fit" variant of funf
         """
 
@@ -968,7 +1003,7 @@ class MoltenProtFit:
         """
         Estimates pre- and post-transition baselines for a series
         function for a single Series (index is Temperature, name is sample ID, values are RFU's)
-        
+
         Parameters
         ----------
         input_series
@@ -980,16 +1015,20 @@ class MoltenProtFit:
         """
         # convert fit length in temperature degrees to datapoint number (using self.dT)
         fit_datapoints = int(fit_length / self.dT)
+        # since pandas 2.0 the float index is stored as object and causes numpy "not inexact" error
+        # we convert the temperature to a proper numpy array
+        temperature_values = np.array(input_series.dropna().index, dtype=np.float32)
+        readout_values = input_series.dropna().values
         # NOTE do not use Nan's to prevent issues during fitting
         pre_fit, pre_covm = np.polyfit(
-            input_series.dropna().iloc[:fit_datapoints].index,
-            input_series.dropna().iloc[:fit_datapoints],
+            temperature_values[:fit_datapoints],
+            readout_values[:fit_datapoints],
             1,
             cov=True,
         )
-        post_fit, post_covm = np.polyfit(
-            input_series.dropna().iloc[-fit_datapoints:].index,
-            input_series.dropna().iloc[-fit_datapoints:],
+        post_fit, _ = np.polyfit(
+            temperature_values[-fit_datapoints:],
+            readout_values[-fit_datapoints:],
             1,
             cov=True,
         )
@@ -1024,14 +1063,14 @@ class MoltenProtFit:
             else:
                 if b_diff > 0:
                     # low-to-high curve - use max of the deriv as Tm_init
-                    self.plate_results.loc[
-                        "Tm_init", input_series.name
-                    ] = self.plate_derivative[input_series.name].idxmax()
+                    self.plate_results.loc["Tm_init", input_series.name] = (
+                        self.plate_derivative[input_series.name].idxmax()
+                    )
                 elif b_diff < 0:
                     # high-to-low curve - use min of the deriv as Tm_init
-                    self.plate_results.loc[
-                        "Tm_init", input_series.name
-                    ] = self.plate_derivative[input_series.name].idxmin()
+                    self.plate_results.loc["Tm_init", input_series.name] = (
+                        self.plate_derivative[input_series.name].idxmin()
+                    )
                 else:
                     # rare case - curves are identical raise a warning and use mid-range
                     self.print_message(
@@ -1049,7 +1088,7 @@ class MoltenProtFit:
         """
         Computes onset temperature Tons based on supplied column names with dHm and Tm
         and adds the value to plate_results
-        
+
         Parameters
         ----------
         Tm_col
@@ -1106,7 +1145,7 @@ class MoltenProtFit:
         """
         Plot the curves from individual wells.
         Creates two subplots - top the fit + data, lower - derivative
-        
+
         Parameters
         ----------
         output_path
@@ -1139,12 +1178,12 @@ class MoltenProtFit:
             data_ax = fig.add_subplot(gs[0])  # experimental data, fit, etc
             deriv_ax = fig.add_subplot(gs[1])  # the derivative
         else:
-            data_ax = data_ax
             deriv_ax = None
 
         # NOTE currently all internal manipulations are done in K
         # and conversion back to original scale is not done
-        if self.denaturant == "K" or self.denaturant == "C":
+        degree_sign = "K"
+        if self.denaturant == "K" or self.denaturant == "C": # FIXME confusing statement
             degree_sign = "K"
         else:
             # NOTE this is a placeholder for chemical denaturant scale
@@ -1158,7 +1197,8 @@ class MoltenProtFit:
             # plot the experimental data
             # TODO use markevery=n to plot every n-th datapoint
             # format used to be kx, however, for bigger datasets this doesn't look good
-            exp_plot = data_ax.plot(
+            # experimental data plot
+            data_ax.plot(
                 self.plate[i].index.values,
                 self.plate[i],
                 "k.",
@@ -1166,7 +1206,8 @@ class MoltenProtFit:
                 label="Experiment",
             )  # , markevery=40)
 
-            fit_plot = data_ax.plot(
+            # fitted data plot
+            data_ax.plot(
                 self.plate[i].index.values, self.plate_fit[i], label="Fit"
             )
 
@@ -1186,6 +1227,8 @@ class MoltenProtFit:
             if deriv_ax is not None:
                 deriv_ax.set_visible(False)
             # set the source dataframe based on the supplied option
+            ylabel = None
+            sourcedf = None
             if datatype == "very_raw":
                 sourcedf = self.plate
                 ylabel = self.readout_type
@@ -1202,7 +1245,8 @@ class MoltenProtFit:
             elif datatype == "fitted":
                 sourcedf = self.plate_fit
                 ylabel = "Fitted RFU"
-            else:
+            
+            if sourcedf is None:
                 self.print_message("Invalid plotting source requested", "w")
 
             if datatype == "derivative":
@@ -1233,13 +1277,15 @@ class MoltenProtFit:
             poly_post = np.poly1d(
                 *self.plate_results.loc[[i], ["kU_fit", "bU_fit"]].values
             )
-            post_plot = data_ax.plot(
+            # post-baseline plot
+            data_ax.plot(
                 self.plate[i].index.values,
                 poly_post(self.plate[i].index.values),
                 label="Post- baseline",
                 linestyle="--",
             )
-            pre_plot = data_ax.plot(
+            # pre-baseline plot
+            data_ax.plot(
                 self.plate[i].index.values,
                 poly_pre(self.plate[i].index.values),
                 label="Pre- baseline",
@@ -1291,14 +1337,15 @@ class MoltenProtFit:
         if show:
             plt.show()
         elif save:
-            plt.savefig(output_path + "/" + str(i) + ".png", dpi=(100))
+            plt.savefig(output_path + "/" + str(i) + ".png", dpi=100)
         plt.close("all")
+        return None
 
     ## internal methods for creating HTML report elements
     def html_heatmap(self, heatmap_cmap, display):
         """
         Returns a div-block with a heatmap of the sortby parameter (the last column in self.plate_results)
-        
+
         Parameters
         ----------
         heatmap_cmap
@@ -1308,7 +1355,7 @@ class MoltenProtFit:
                 > table (standard view)
                 > none (not visible)
                 > block (compact view)
-        
+
         Notes
         -----
         The heatmap that the user sees when opening the HTML will have display=table, all other will start as display=none
@@ -1404,15 +1451,12 @@ class MoltenProtFit:
         """
         Check if analysis compleded and self.plate_results is created
         """
-        if "plate_results" in self.__dict__:
-            return True
-        else:
-            return False
+        return "plate_results" in self.__dict__
 
     def testWellID(self, wellID, ignore_results=False):
         """
         Check if a well exists in self.plate_results (return True), otherwise return False
-        
+
         Parameters
         ----------
         wellID
@@ -1421,7 +1465,7 @@ class MoltenProtFit:
             if True, will look for the ID's in plate_raw, even if self.plate_results exists
         """
         # check if analysis was done, and depending on that choose the index to check
-        if "plate_results" in self.__dict__:
+        if self.plate_results is not None:
             index_tocheck = self.plate_results.index
         else:
             index_tocheck = self.plate_raw.columns
@@ -1431,12 +1475,11 @@ class MoltenProtFit:
 
         if wellID in index_tocheck:
             return True
-        else:
-            return False
+        return False
 
-    def getResultsColumns(self):
+    def getResultsColumns(self) -> list:
         """
-        Returns a tuple of columns from self.plate_results that are relevant for GUI
+        Returns a list of columns from self.plate_results that are relevant for GUI
         """
 
         if "plate_results" in self.__dict__:
@@ -1448,9 +1491,9 @@ class MoltenProtFit:
             else:
                 output = output + ["S"]
             return output
-        else:
-            self.print_message("No plate_results attribute found", "w")
-            self.print_message("Please perform analysis first", "i")
+        self.print_message("No plate_results attribute found", "w")
+        self.print_message("Please perform analysis first", "i")
+        return None
 
     ## Big methods for data input, processing and output
     def SetAnalysisOptions(
@@ -1459,11 +1502,11 @@ class MoltenProtFit:
         baseline_fit=analysis_defaults["baseline_fit"],
         baseline_bounds=analysis_defaults["baseline_bounds"],
         dCp=analysis_defaults["dCp"],
-        onset_threshold=analysis_defaults["onset_threshold"],
+        # onset_threshold=analysis_defaults["onset_threshold"], # not exposed anywhere
         savgol=analysis_defaults["savgol"],
         # these are pre-processing options (defaults stored in a different dict)
-        blanks=prep_defaults["blanks"],  # TODO set in layout instead?
-        exclude=prep_defaults["exclude"],  # TODO set in layout instead?
+        blanks=prep_defaults["blanks"],    # TODO set in layout instead? TODO use None and replace with []
+        exclude=prep_defaults["exclude"],  # TODO set in layout instead? TODO use None and replace with []
         invert=prep_defaults["invert"],
         mfilt=prep_defaults["mfilt"],
         shrink=prep_defaults["shrink"],
@@ -1475,7 +1518,7 @@ class MoltenProtFit:
     ):
         """
         Sets in the MoltenProt instance all analysis-related parameters that will then  be used by methods PrepareData() and ProcessData(). For parameter description see analysis_defaults and prep_defaults dicts
-        
+
         References
         ----------
         https://homepages.inf.ed.ac.uk/rbf/HIPR2/median.htm
@@ -1485,8 +1528,6 @@ class MoltenProtFit:
         self.model = model
         self.baseline_fit = baseline_fit
         self.baseline_bounds = baseline_bounds
-        # current value for onset_threshold (used in santoro1988(d) to obtain values of T_onset)
-        self.onset_threshold = 0.01
         # the value for savgol window to compute the derivative
         self.savgol = savgol
 
@@ -1507,7 +1548,10 @@ class MoltenProtFit:
         self.SetLayout(layout=layout, layout_input_type=layout_input_type, dCp=dCp)
 
     def SetLayout(
-        self, layout=None, layout_input_type="csv", dCp=analysis_defaults["dCp"],
+        self,
+        layout=None,
+        layout_input_type="csv",
+        dCp=analysis_defaults["dCp"],
     ):
         """
         Sets layout and dCp
@@ -1566,7 +1610,7 @@ class MoltenProtFit:
         """
         Takes a dataframe with alphanumeric columns (A1-H12) and index being names of
         the parameters (e.g. Tf_fit, Ea_fit) and sets it as the attribute self.fixed_params
-        
+
         Notes
         -----
         No sanity checks of the input are currently done
@@ -1737,7 +1781,7 @@ class MoltenProtFit:
     def ProcessData(self):
         """
         Performs curve fitting and creates results dataframes
-        
+
         Notes
         -----
         The names for the parameters and the contents of plate_results variable are different for various methods, so they are set up based on the selected analysis
@@ -1754,7 +1798,7 @@ class MoltenProtFit:
             return None
 
         # check if model name is correct
-        if not self.model in avail_models.keys():
+        if self.model not in avail_models.keys():
             raise ValueError("Unknown model '{}'".format(self.model))
 
         model = avail_models[self.model](scan_rate=self.scan_rate)
@@ -1804,7 +1848,7 @@ class MoltenProtFit:
             T = np.float64(data.index.values)
             # guess initial parameters
             p0 = model.param_init(data)
-            self.plate_results[i][0 : len(p0)] = p0
+            self.plate_results.loc[self.plate_results.iloc[0 : len(p0)].index, i] = p0
             # get parameter bounds
             param_bounds = model.param_bounds(data)
             # if the model has these parameters, then run a more precise initial parameter estimation
@@ -1863,11 +1907,13 @@ class MoltenProtFit:
                     p, covm = curve_fit(
                         f, T, data.values, list(self.plate_results[i][0 : len(p0) + 1])
                     )
-                self.plate_results[i][len(p0) : (len(p0)) * 2] = p
+                self.plate_results.loc[
+                    self.plate_results.iloc[len(p0) : (len(p0)) * 2].index, i
+                ] = p
                 # this is the official way to compute stdev error (from scipy docs)
-                self.plate_results_stdev[i][len(p0) : (len(p0)) * 2] = np.sqrt(
-                    np.diagonal(covm)
-                )
+                self.plate_results_stdev.loc[
+                    self.plate_results.iloc[len(p0) : (len(p0)) * 2].index, i
+                ] = np.sqrt(np.diagonal(covm))
             except RuntimeError:
                 # these probably correspond to bad fitting
                 self.print_message(
@@ -1877,7 +1923,7 @@ class MoltenProtFit:
                 # generate a list of bad fits
                 self.bad_fit.append(i)
             except ValueError as e:
-                self.print_message(e.__str__(), "w")
+                self.print_message(str(e), "w")
                 # catch some problems of fitting with santoro1988d
                 self.print_message(
                     "Curve fit for {} failed unexpectedly (ValueError)".format(i), "w"
@@ -1890,7 +1936,7 @@ class MoltenProtFit:
             # however, they must be included for standrard error of estimate
             # (more info here: http://people.duke.edu/~rnau/compare.htm)
             try:
-                self.plate_results[i].loc["S"] = np.sqrt(len(T) - len(p0))
+                self.plate_results.loc["S", i] = np.sqrt(len(T) - len(p0))
             except TypeError:
                 self.print_message(
                     "Curve for sample {} has just one value!".format(i), "w"
@@ -1911,12 +1957,15 @@ class MoltenProtFit:
             input DataFrame is self.plate_results
             """
             # use the fit parameters from plate_results and the index of plate_fit to compute fit curves
+
             self.plate_fit = pd.concat(
                 [
                     self.plate_fit,
                     pd.Series(
                         f(
-                            self.plate_fit.index,
+                            np.array(
+                                self.plate_fit.index, dtype=np.float32
+                            ),  # since pandas 2.0 the float index is stored as objects and causes issues with numpy
                             *list(input_series[len(p0) : (len(p0)) * 2]),
                         ),
                         index=self.plate_fit.index,
@@ -2060,6 +2109,7 @@ class MoltenProtFit:
         # for proper json i/o
         self.plate_results.index.name = "ID"
         self.plate_results_stdev.index.name = "ID"
+        return None
 
     def CalculateThermodynamic(self):
         """
@@ -2151,7 +2201,7 @@ class MoltenProtFit:
     def CombineResults(self, tm_stdev_filt, bs_filt, merge_dup, tm_key):
         """
         A helper method to filter results and optionally average duplicates
-        
+
         Parameters
         ----------
         tm_stdev_filt
@@ -2162,11 +2212,11 @@ class MoltenProtFit:
             samples with BS-factor above this value will be kept
         merge_dup
             whether to merge duplicates (based on annotations in the layout)
-        
+
         Returns
         -------
         results - joined plate_results/stdev DataFrame with optional filtering and duplicate averaging
-        
+
         Notes
         -----
         * not all plate_results can contain BS-factor, so this part of filtering will be skipped
@@ -2244,7 +2294,7 @@ class MoltenProtFit:
             try:
                 text_data["n"] = numeric_data_count.iloc[:, [0]]
             except ValueError as e:
-                self.print_message(e.__str__(), "w")
+                self.print_message(str(e), "w")
                 self.print_message(
                     "No data left after filtering in CombineResults()", "w"
                 )
@@ -2260,6 +2310,7 @@ class MoltenProtFit:
         #HACK rename Tm to Tagg in for scattering data
         # also chemical denaturation renaming can be done here
         """
+        rename_dict = {}
         if datatype == "sct":
             rename_dict = {"Tm_init": "Tagg_init", "Tm_fit": "Tagg_fit"}
         elif datatype == "chem":
@@ -2273,10 +2324,10 @@ class MoltenProtFit:
     def _trim_string(string, length=30, symmetric=True):
         """
         Helper method to trim a string to a specific length by removing the middle part
-        
+
         Arguments
         ---------
-        string 
+        string
             string to be trimmed
         length
             length of the data to keep
@@ -2290,20 +2341,19 @@ class MoltenProtFit:
             return string
         if symmetric:
             return string[: length // 2] + " ... " + string[-length // 2 :]
-        else:
-            return string[:length] + "..."
+        return string[:length] + "..."
 
     def _plotfig_pdf(self, samples, failed=False):
         """
         A helper method for smart packing of individual sample plots into figures
-        
+
         Parameters
         ----------
         samples
             a valid list of samples to be plotted
         failed
             indicate if samples are from failed fits
-        
+
         Returns
         -------
         A list of Figure objects to be added to pages list
@@ -2337,7 +2387,7 @@ class MoltenProtFit:
                 plot_counter += 1
             # if the 11th plot was plotted, append old figure and initialize a new one
             # this should be also triggered if less than 11 is plotted
-            if (plot_counter == 11) or (plot_counter == n_results):
+            if plot_counter in (11, n_results):
                 # make legend in the next axes
                 plot_axs[plot_counter].legend(
                     handles=plot_axs[plot_counter - 1].get_lines(),
@@ -2365,12 +2415,12 @@ class MoltenProtFit:
     def PdfReport(self, outfile):
         """
         Generate and write a multi-page PDF report
-        
+
         Parameters
         ----------
         outfile
             location of the output, overwrite without confirmation
-        
+
         Notes
         -----
         * heatmap and converter96 are ancient methods, so they are just carefully wrapped around
@@ -2394,10 +2444,12 @@ class MoltenProtFit:
         result_table["Condition"] = result_table["Condition"].apply(
             self._trim_string, length=10, symmetric=False
         )
-        result_table_colors = result_table.copy()  # color table 1.0 is white 0 is black
-        result_table_colors.loc[:, :] = "1.0"
-        result_table_colors.iloc[::2] = "0.75"
-        result_table_colors = result_table_colors.values
+        result_table_colors = (
+            result_table.copy().values
+        )  # color table 1.0 is white 0 is black
+        result_table_colors[:, :] = "1.0"
+        result_table_colors[::2] = "0.75"
+        # result_table_colors = result_table_colors.values
         result_index = result_table.index
         result_table = result_table.values  # convert to a list of lists
         n_results = len(result_table)  # total number of results
@@ -2434,7 +2486,11 @@ class MoltenProtFit:
         ]
         info_table_ax = page1_ax[2]
         info_table = mpl_table(
-            info_table_ax, info_table, loc="upper left", edges="open", cellLoc="left",
+            info_table_ax,
+            info_table,
+            loc="upper left",
+            edges="open",
+            cellLoc="left",
         )
 
         # using the solution from here to set proper font size in the table:
@@ -2442,7 +2498,8 @@ class MoltenProtFit:
         info_table.auto_set_font_size(False)
         info_table_ax.set_title("Run info", loc="left", fontweight="bold")
         top10_table_ax = page1_ax[1]
-        top10_table = mpl_table(
+        # table of top 10 results
+        mpl_table(
             top10_table_ax,
             result_table[:15, :],
             loc="upper left",
@@ -2469,7 +2526,8 @@ class MoltenProtFit:
         ## Full result table - create if more than 15 results (but less than 48)
         if n_results > 15:
             page2, page2_ax = plt.subplots(1, 1, figsize=(8.3, 11.7))
-            page2_table = mpl_table(
+            # table on page 2
+            mpl_table(
                 page2_ax,
                 result_table[:48],
                 loc="upper left",
@@ -2489,7 +2547,8 @@ class MoltenProtFit:
         # if more than 48 samples are present
         if n_results > 48:
             page3, page3_ax = plt.subplots(1, 1, figsize=(8.3, 11.7))
-            page3_table = mpl_table(
+            # page 3 table
+            mpl_table(
                 page3_ax,
                 result_table[48:],
                 loc="upper left",
@@ -2531,7 +2590,7 @@ class MoltenProtFit:
     def _get_failed_samples(self):
         """
         Return a list of samples that were either excluded or not fit
-        
+
         Notes
         -----
         * will raise a value error if the analysis is not done
@@ -2543,7 +2602,7 @@ class MoltenProtFit:
         print10=False,
         xlsx=False,
         genpics=False,
-        heatmaps=[],
+        heatmaps=None,
         hm_ref=None,
         heatmap_cmap=defaults["heatmap_cmap"],
         resources_prefix="",
@@ -2553,7 +2612,7 @@ class MoltenProtFit:
     ):
         """
         Write the results to the disk
-        
+
         Parameters
         ----------
         print10
@@ -2577,32 +2636,25 @@ class MoltenProtFit:
         pdf
             write a report in PDF format
         """
-
+        if heatmaps is None:
+            heatmaps = []
         # estimate how many samples could not go through the processing by finding the
         # difference between the indexes of original dataset and the final results
         # BUG if the sample is registered in xlsx annotations, but not present in the raw data plate
         # (i.e. it was marked as bad capillary by Prometheus), then it will not be shown here
         # such samples can be easily diagnosed through reports: even the raw-only signal is not plotted
         # BUG failed samples have only ID's, but not layout info
+        output_results = self.plate_results.copy()
+        output_results_stdev = self.plate_results_stdev.copy()
         failed_samples = self._get_failed_samples()
-
-        # if there is a least one empty sample create respective results dataframes for it
-        # and temporarily append them to the main results (will not persist as a class attribute)
-        # NOTE index objects are immutable, so a new empty df has to be created and concatenated
+        # failed samples are added as all-Nan rows
         if len(failed_samples) > 0:
-            failed_results = pd.DataFrame(
-                index=failed_samples, columns=self.plate_results.columns
-            )
-            failed_results_stdev = pd.DataFrame(
-                index=failed_samples, columns=self.plate_results_stdev.columns
-            )
-            output_results = pd.concat([self.plate_results, failed_results])
-            output_results_stdev = pd.concat(
-                [self.plate_results_stdev, failed_results_stdev]
-            )
-        else:
-            output_results = self.plate_results
-            output_results_stdev = self.plate_results_stdev
+            for sample_id in failed_samples:
+                for col_name in output_results.columns:
+                    output_results.at[sample_id, col_name] = np.nan
+            for sample_id in failed_samples:
+                for col_name in output_results_stdev.columns:
+                    output_results.at[sample_id, col_name] = np.nan
 
         output_path = self.resultfolder
 
@@ -2616,19 +2668,19 @@ class MoltenProtFit:
         if not no_data:
             if xlsx:
                 # create a holding object for *.xlsx export
-                writer = pd.ExcelWriter(
+                with pd.ExcelWriter(
                     os.path.join(output_path, resources_prefix + "_Results.xlsx")
-                )
-
-                self.plate_raw.to_excel(writer, "Raw data")
-                self.plate.to_excel(writer, "Preprocessed data")
-                self.plate_fit.to_excel(writer, "Fit curves")
-                self.plate_raw_corr.to_excel(writer, "Baseline-corrected")
-                output_results.to_excel(writer, "Fit parameters")
-                output_results_stdev.to_excel(writer, "Standard deviations")
-
-                # this is the longest part in XLSX saving procedure
-                writer.save()
+                ) as writer:
+                    self.plate_raw.to_excel(writer, sheet_name="Raw data")
+                    self.plate.to_excel(writer, sheet_name="Preprocessed data")
+                    self.plate_fit.to_excel(writer, sheet_name="Fit curves")
+                    self.plate_raw_corr.to_excel(
+                        writer, sheet_name="Baseline-corrected"
+                    )
+                    output_results.to_excel(writer, sheet_name="Fit parameters")
+                    output_results_stdev.to_excel(
+                        writer, sheet_name="Standard deviations"
+                    )
             else:
                 # convert plate_results* dataframes to *.csv's
                 output_results.to_csv(
@@ -2749,13 +2801,13 @@ class MoltenProtFitMultiple:
     def __init__(self, scan_rate=None, denaturant=None, layout=None, source=None):
         """
         Only core settings are defined at the level of initialization:
-        
+
         layout:DF - annotation for all samples
         denaturant:str - can be either a unit of temperature (C, K) or denaturant name (GuHCl, Urea)
         all internal processing is done with temperature in Kelvins
         source: string - the name of the file that was used to get the data (currently not the real path)
         debug level?
-        
+
         All datasets must be added using a dedicated method.
         Defaults to None, which is useful to re-create instances from JSON files
         """
@@ -2791,17 +2843,17 @@ class MoltenProtFitMultiple:
         message = "{}{} (All)".format(prefix, text)
         print(message)
         message += "\n"
-        for i, j in self.datasets.items():
+        for _, j in self.datasets.items():
             j.protocolString += message
 
     def GetAnalysisSettings(self):
         """
         Get information on the analysis settings (shared settings and per-dataset model settings)
-        
+
         Returns
         -------
         a tuple of two variables:
-            > dict with current analysis settings 
+            > dict with current analysis settings
             > dataframe with dataset/model settings (compatible with QtTableWidget)
         """
 
@@ -2830,14 +2882,14 @@ class MoltenProtFitMultiple:
     def AddDataset(self, data, readout):
         """
         Add an individual Dataset (as MP_fit instance in datasets attribute)
-        
+
         Parameters
         ----------
         data: pd.DataFrame
             a ready-togo DataFrame with Index called "Temperature" or "Denaturant" (not implemented yet)
         readout: str
             a name for the dataset to be added; will be used to call internal data and thus has to be unique; spaces will be substituted with underscore
-            
+
         Notes
         -----
         TODO add an option to indicate that the data is about aggregation (to rename to Tagg)
@@ -2863,12 +2915,12 @@ class MoltenProtFitMultiple:
     def DelDataset(self, todelete):
         """
         Remove a dataset from the instance
-        
+
         Parameters
         ----------
         todelete
             which dataset to delete
-        
+
         Notes
         -----
         This permanently removes a dataset, so the data cannot be recovered. If the data should be retained, then set model to 'skip' in Analysis
@@ -2878,10 +2930,10 @@ class MoltenProtFitMultiple:
         else:
             self.print_message("Dataset '{}' not found".format(todelete), "w")
 
-    def GetDatasets(self, no_skip=False):
+    def GetDatasets(self, no_skip=False) -> tuple:
         """
         Returns available dataset names
-        
+
         Parameters
         ----------
         no_skip
@@ -2897,22 +2949,21 @@ class MoltenProtFitMultiple:
                         continue
                 output.append(dataset_name)
             return tuple(output)
-        else:
-            return tuple(self.datasets.keys())
+        return tuple(self.datasets.keys())
 
     def UpdateLayout(self):
         """
         For GUI communication only, update the layout of the datasets after the "master" layout in MPFM was changed
-        
+
         Notes
         -----
         BUG this method does not use the MPF.SetLayout, which makes code redundant
         layouts are set only at SetAnalysisOptions state
         """
-        for dataset_id, mp_fit in self.datasets.items():
+        for _, mp_fit in self.datasets.items():
             mp_fit.layout = self.layout
             # also update the layout info in plate_results (if present)
-            if hasattr(mp_fit, "plate_results"):
+            if mp_fit.plate_results is not None:
                 mp_fit.plate_results["Condition"] = self.layout["Condition"]
 
     def ResetLayout(self):
@@ -2933,7 +2984,7 @@ class MoltenProtFitMultiple:
         """
         # too high precision is not relevant
         self.scan_rate = round(scan_rate, 2)
-        for dataset_id, mp_fit in self.datasets.items():
+        for _, mp_fit in self.datasets.items():
             mp_fit.scan_rate = self.scan_rate
 
     def RenameResultsColumns(self, which, mapping):
@@ -2941,7 +2992,7 @@ class MoltenProtFitMultiple:
         E.g. in scattering data, the output is not Tm, but Tagg
         Also, for chemical denaturation the columns can be completely different
         NOTE currently done via RenameResults of MoltenProtFit
-        
+
         Parameters
         ----------
         which : str
@@ -2960,7 +3011,7 @@ class MoltenProtFitMultiple:
     def SetAnalysisOptions(self, which="all", printout=False, **kwargs):
         """
         Set analysis options for a single dataset
-        
+
         Parameters
         ----------
         which : str
@@ -3001,20 +3052,16 @@ class MoltenProtFitMultiple:
         kwargs["layout_input_type"] = "from_xlsx"
         # NOTE the differences from 1x processing:
         # the layout is shared, so we use self.layout, and also tell MoltenProtFit instance that the layout is already a DataFrame (using layout_input_type)
-        if which == "all":
-            for i, j in self.datasets.items():
-                j.SetAnalysisOptions(**kwargs)
-        else:
-            self.datasets[which].SetAnalysisOptions(**kwargs)
-
-        if printout:
-            print("Data type is {}".format(i))
-            self.datasets[which].printAnalysisSettings()
+        for dset_name, dset in self.datasets.items():
+            if dset_name == which or which == 'all':
+                dset.SetAnalysisOptions(**kwargs)
+                if printout:
+                    dset.printAnalysisSettings()
 
     def PrepareAndAnalyseSingle(self, which):
         """
         Run data processing pipeline on a single dataset
-        
+
         Parameters
         ----------
         which
@@ -3031,7 +3078,7 @@ class MoltenProtFitMultiple:
     def PrepareAndAnalyseAll(self, n_jobs=1):
         """
         Run analysis on all datasets
-        
+
         Parameters
         ----------
         n_jobs : int
@@ -3053,7 +3100,7 @@ class MoltenProtFitMultiple:
     def CombineResults(self, outfile, tm_stdev_filt=-1, bs_filt=-1, merge_dup=False):
         """
         Join all plate_results/stdev DataFrames and write to a single XLSX file
-        
+
         Parameters
         ----------
         outfile : str
@@ -3064,7 +3111,7 @@ class MoltenProtFitMultiple:
             samples with BS-factor below this value will be discarded
         merge_dup : bool
             whether to aggregate samples with identical annotations in layout
-        
+
         Notes
         -----
         TODO: add more generic filtering options
@@ -3073,40 +3120,37 @@ class MoltenProtFitMultiple:
         analysis_tuple = self.GetDatasets()
 
         # initiate xlsx writer objects
-        writer = pd.ExcelWriter(outfile)
+        with pd.ExcelWriter(outfile) as writer:
 
-        for i in analysis_tuple:
-            if i == "Scattering":
-                tm_key = "Tagg"
-            else:
-                tm_key = "Tm"
+            for i in analysis_tuple:
+                if i == "Scattering":
+                    tm_key = "Tagg"
+                else:
+                    tm_key = "Tm"
 
-            # skip non-processed datasets (model=skip)
-            if self.datasets[i].model != "skip":
+                # skip non-processed datasets (model=skip)
+                if self.datasets[i].model == "skip":
+                    continue
                 output = self.datasets[i].CombineResults(
                     tm_stdev_filt=tm_stdev_filt,
                     bs_filt=bs_filt,
                     merge_dup=merge_dup,
-                    # merge_stdev=merge_stdev, DEPRECATED?
                     tm_key=tm_key,
                 )
                 # NOTE Excel sheets are now named identically to input dataset names
-                output.to_excel(writer, i)
-
-        # write XLSX files to the result folder:
-        writer.save()
+                output.to_excel(writer, sheet_name=i)
 
     def GenerateReport(self, heatmap_cmap, template_path=None):
         """
         Creates an interactive HTML report (as a string)
-        
+
         Parameters
         ----------
         heatmap_cmap
             matplotlib colormap for heatmap
         template_path
             the HTML template
-        
+
         Returns
         -------
         A string made from report template where placeholders were substituted to actual HTML code
@@ -3136,6 +3180,7 @@ class MoltenProtFitMultiple:
             display_buttons = ""
 
         # cycle through all datasets and get glue up strings to the starting button or heatmap string
+        first_heatmap = None
         for dataset_name, dataset in self.datasets.items():
             # skip non-processed datasets
             if dataset.model != "skip":
@@ -3172,7 +3217,7 @@ class MoltenProtFitMultiple:
     ):
         """
         Write output to disc for a single dataset
-        
+
         Parameters
         ----------
         which : dataset to process
@@ -3191,7 +3236,7 @@ class MoltenProtFitMultiple:
             how many parallel processes can be spawned
         no_data : bool
             no data output
-            
+
         Notes
         -----
         * No output generated for datasets with model "skip"
@@ -3225,7 +3270,7 @@ class MoltenProtFitMultiple:
         # report,
         xlsx=False,
         genpics=False,
-        heatmaps=[],
+        heatmaps=None,
         report_format=None,
         heatmap_cmap=defaults["heatmap_cmap"],
         # summary=False,
@@ -3235,7 +3280,7 @@ class MoltenProtFitMultiple:
     ):
         """
         Write output to disc for all associated datasets
-        
+
         Parameters
         ----------
         outfolder : str
@@ -3258,6 +3303,8 @@ class MoltenProtFitMultiple:
         session : bool
             save MP session in JSON format
         """
+        if heatmaps is None:
+            heatmaps = []
         # generate and populate a dict of output settings
         output_kwargs = {}
 
@@ -3357,21 +3404,20 @@ class MoltenProtFitMultipleLE(MoltenProtFitMultiple):
 
 class MoltenProtFitMultipleRefold(MoltenProtFitMultiple):
     """
-    Contains special tweaks to work with refolding data from Prometheus NT.48
-    
+    Contains special tweaks to work with refolding data - to be implemented
+
     * Analyse all datasets, but not the refolding datasets (addDataset for normal unfolding, addRefoldDataset
     for refolding datasets, maintain them separately, but use the same keys in datasets dict)
     * take the baseline parameters from unfolding datasets and draw fraction refolded
     * for fraction refolded generate a separate report HTML file
     * how to show this in GUI?
-    
+
     Eventually:
     * add fraction_irreversibly_unfolded to the equation and fit refolding data
     using the parameters fro unfolding as starting values
     """
-
-    pass
-
+    def __init__(self):
+        raise NotImplementedError
 
 ### Data parsers
 """
@@ -3383,7 +3429,7 @@ experimental data file.
 def _csv_helper(filename, sep, dec):
     """
     Pre-processing steps for reading CSV files
-    
+
     Returns
     -------
     pd.DataFrame with Temperature as index
@@ -3393,10 +3439,9 @@ def _csv_helper(filename, sep, dec):
             filename, sep=sep, decimal=dec, index_col="Temperature", encoding="utf-8"
         )
     except ValueError as e:
-        print(e)
         raise ValueError(
             "Input *.csv file is invalid!\nCheck if column called 'Temperature' exists and separators are specified correctly"
-        )
+        ) from e
 
     # check if index contains duplicates and drop those
     if data.index.duplicated().any():
@@ -3418,7 +3463,7 @@ def parse_plain_csv(
 ):
     """
     Parse a standard CSV file with columns Temperature, A1, A2, ...
-    
+
     Parameters
     ----------
     filename : str
@@ -3434,7 +3479,7 @@ def parse_plain_csv(
     Returns
     -------
     MoltenProtFitMultiple instance
-    
+
     #TODO add removal of zeros in A01, A02, etc
     """
 
@@ -3473,7 +3518,7 @@ def parse_spectrum_csv(
 ):
     """
     Parse CSV file with columns Temperature,wavelengths...
-    
+
     Parameters
     ----------
     filename : str
@@ -3487,7 +3532,7 @@ def parse_spectrum_csv(
     Returns
     -------
     MoltenProtFitMultiple instance
-    
+
     Notes
     -----
     * Temperature axis is not sorted
@@ -3527,12 +3572,20 @@ def parse_spectrum_csv(
     return output
 
 
-def parse_prom_xlsx(filename, raw=False, refold=False, LE=False, deltaF=True, panta_rhei=False, refine_scan_rate=True):
+def parse_prom_xlsx(
+    filename,
+    raw=False,
+    refold=False,
+    LE=False,
+    deltaF=True,
+    panta_rhei=False,
+    refine_scan_rate=True,
+):
     """
     Parse a processed file from Prometheus NT.48. In these files temperature
     is always in Celsius and the readouts are more or less known. Layout is read
     from the overview sheet
-    
+
     Parameters
     ----------
     filename : str
@@ -3551,16 +3604,16 @@ def parse_prom_xlsx(filename, raw=False, refold=False, LE=False, deltaF=True, pa
         indicate if the data was exported from Prometheus Panta; if True, raw refold and deltaF flags are overridden
     refine_scan_rate : bool
         do not refine the scan rate (e.g. when the info is not present in the data)
-    
+
     Returns
     -------
     MoltenProtFitMultiple instance
-    
+
     Notes
     -----
     * Parsing relies on sheet names in English
     * Current implementation can successfully parse raw XLSX as long as there are less than 96 data columns (which is 3 times the number of capillaries). The data will be contaminated with straight lines of temperature and time
-    
+
     TODO
     * the sheets have a standardized order in the file: Overview, Readout1_(unfolding), Readout1_(unfolding)_derivative ...,  Readout1_(refolding), Readout1_(refolding)_derivative ... ; this can be used to parse data independently of sheet labels; also, the sheets containing "deriv" can be auto-excluded
     """
@@ -3580,16 +3633,18 @@ def parse_prom_xlsx(filename, raw=False, refold=False, LE=False, deltaF=True, pa
 
     layout = input_xlsx["Overview"]
     layout.reset_index(inplace=True)
-    
+
     # determine the scan rate
-    if 'Temperature Slope' in layout.columns:
+    if "Temperature Slope" in layout.columns:
         # read scan rate from first row in column "Temperature Slope"
         # NOTE without conversion to float scan_rate (even if 1) will be saved to JSON as "null"!
         scan_rate = float(layout["Temperature Slope"].iloc[0])
     else:
         # this happens in Panta files, but the overview sheet can be hacked
-        print('Warning: cannot determine the scan rate, assuming 1 degree/min; it is recommended to add column \"Temperature Slope\" (without quotes) to the Overview sheet and set the correct value for all samples; scan rate is only relevant for kinetic analyses')
-        scan_rate = 1.
+        print(
+            'Warning: cannot determine the scan rate, assuming 1 degree/min; it is recommended to add column "Temperature Slope" (without quotes) to the Overview sheet and set the correct value for all samples; scan rate is only relevant for kinetic analyses'
+        )
+        scan_rate = 1.0
         refine_scan_rate = False
 
     layout = layout.reindex(["Capillary", "Sample ID", "dCp"], axis=1)
@@ -3607,7 +3662,7 @@ def parse_prom_xlsx(filename, raw=False, refold=False, LE=False, deltaF=True, pa
         output = MoltenProtFitMultiple(
             scan_rate=scan_rate, layout=layout, denaturant="C", source=filename
         )
-    
+
     # cycle through available readouts and add them to MPMultiple
     if refold:
         # Full list of readouts, currently only unfolding can be processed
@@ -3630,28 +3685,30 @@ def parse_prom_xlsx(filename, raw=False, refold=False, LE=False, deltaF=True, pa
         # Panta cols: temp1_cap1,readout1_cap1,temp2_cap1,readout2_cap1,...
         # raw cols  : cap1,cap1,cap1,cap2,cap2,cap2
         #             time,temp,readout,...
-        consolidated_table = input_xlsx['Data Export']
+        consolidated_table = input_xlsx["Data Export"]
         n_capillaries = len(output.layout.loc[output.layout.Capillary.notna(), :])
-        readouts_per_capillary = len(consolidated_table.columns) // n_capillaries # should be the difference, 21?
+        readouts_per_capillary = (
+            len(consolidated_table.columns) // n_capillaries
+        )  # should be the difference, 21?
         readouts = []
 
         # NOTE assuming that each capillary has the same set of readouts, so the leftover should be zero here
         assert len(consolidated_table.columns) % n_capillaries == 0
 
-        # cycle through each readout type, first use slices to select relevant temp and 
-        for i in range(0,readouts_per_capillary,2):
+        # cycle through each readout type, first use slices to select relevant temp and
+        for i in range(0, readouts_per_capillary, 2):
             # temperature values for all capillaries
-            temp = consolidated_table.iloc[:, i::readouts_per_capillary] 
+            temp = consolidated_table.iloc[:, i::readouts_per_capillary]
             # readout for all capillaries
-            data = consolidated_table.iloc[:, i+1::readouts_per_capillary]
-            
+            data = consolidated_table.iloc[:, i + 1 :: readouts_per_capillary]
+
             # extract the name of the readout and skip derivative if detected
             readout_name = data.columns[0]
-            if 'deriv' in readout_name.lower():
+            if "deriv" in readout_name.lower():
                 continue
             # For simplicity, only the first word is taken to name the readout
             readout_name = readout_name.split()[0]
-            
+
             # combine columns from temp and data as expected for classic raw format
             xlsx_sheet = None
             for temp_col, data_col in zip(temp.columns, data.columns):
@@ -3661,14 +3718,16 @@ def parse_prom_xlsx(filename, raw=False, refold=False, LE=False, deltaF=True, pa
                 else:
                     xlsx_sheet = pd.concat([xlsx_sheet, *data_to_add], axis=1)
             # HACK "classic" parser removes the first row, so we can fill it wit zeros
-            empty_row = pd.Series(0., index=range(len(xlsx_sheet.columns)))
+            empty_row = pd.Series(0.0, index=range(len(xlsx_sheet.columns)))
             # NOTE at this point the original column names are gone
-            xlsx_sheet = pd.concat([empty_row, xlsx_sheet.T.reset_index(drop=True)], axis=1).T
-            
+            xlsx_sheet = pd.concat(
+                [empty_row, xlsx_sheet.T.reset_index(drop=True)], axis=1
+            ).T
+
             # update the main dict from xlsx and the list of available readouts
             input_xlsx[readout_name] = xlsx_sheet
             readouts.append(readout_name)
-        
+
         # Override some of the parsing values values
         raw = True
         deltaF = False
@@ -3720,9 +3779,9 @@ def parse_prom_xlsx(filename, raw=False, refold=False, LE=False, deltaF=True, pa
                 data = pd.concat([time_scale, temp_scale, readings], axis=1)
 
             # determine true scan rate by running a linear fit of temperature vs time
-            if (refined_scan_rate is None) and refine_scan_rate :
+            if (refined_scan_rate is None) and refine_scan_rate:
                 temp_vs_time = data.iloc[:, :2].astype(float).dropna()
-                slope, intercept = np.polyfit(
+                slope, _ = np.polyfit(
                     temp_vs_time.iloc[:, 0], temp_vs_time.iloc[:, 1], 1
                 )
                 refined_scan_rate = slope * 60  # convert degC/sec to degC/min
@@ -3789,12 +3848,12 @@ def parse_prom_xlsx(filename, raw=False, refold=False, LE=False, deltaF=True, pa
 def mp_from_json(input_file):
     """
     Read a json file and if successful return a ready-to-use MoltenProtFit instance
-    
+
     Parameters
     ----------
     input_file
         input file in JSON format
-    
+
     Notes
     -----
     BUG column ordering is messed up after JSON I/O
@@ -3806,21 +3865,21 @@ def mp_from_json(input_file):
 
 def mp_to_json(object_inst, output=None):
     """Convert an MoltenProtFit/MPFMultiple instance to a JSON file
-    
+
     Parameters
     ----------
-    object_inst : 
+    object_inst :
         MP instance to be converted to JSON
     output : string or None
         if None, return a JSON string
         if output=='self', then use object_inst.resultfolder attribute
         otherwise use str as a location where to write
-    
+
     Returns
     -------
     string
         only if output parameter is None
-        
+
     Notes
     -----
     BUG Column sorting is usually A1 A2..., but after json i/o it is A1 A10...
@@ -3839,7 +3898,8 @@ def mp_to_json(object_inst, output=None):
 
     with open(output, "w") as file:
         json.dump(object_inst, file, default=serialize, indent=4)
-
+    
+    return None
     """
     # add compression: output file is smaller, but the process itself is slower
     with gzip.GzipFile(self.resultfolder+'/MP_session.json.gz', 'w') as fout:
