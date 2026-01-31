@@ -32,7 +32,7 @@ setup(
     description="Toolkit for protein (thermal) unfolding analysis.",
     author="Vadim Kotov",
     license="GPLv3",
-    url="",  # is required
+    url="https://github.com/kvr2007/moltenprot",  # is required
     include_package_data=True,
     packages=find_packages(),
     python_requires=">=3.8",
@@ -44,7 +44,11 @@ setup(
         "xlrd",
         "matplotlib>=3.7",
     ],
-    extras_require={"gui": ["pyside6"], "multiproc": ["joblib>=1.0"]},
+    extras_require={
+                    "gui": ["pyside6"],
+                    "multiproc": ["joblib>=1.0"],
+                    "dev": ['black', 'pylint', 'pyinstaller']
+                    },
     # shortcuts to be installed system-wide
     entry_points={
         "console_scripts": [

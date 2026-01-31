@@ -154,17 +154,6 @@ This will create a desktop and menu shortcuts for MoltenProt GUI (use options `-
 
 Alternatively, use PyInstaller bundles (see below on how to build them).
 
-### PyInstaller bundles on MacOS
-MacOS may prohibit startup of "non-verified" programs. To fix this in command line:
-```
-# check if the file is in quarantine
-xattr moltenprot_mac.app
-# quarantined apps will have attribute `com.apple.quarantine`
-# remove the attribute recursively
-xattr -r -d com.apple.quarantine moltenprot_mac.app
-```
-[link](https://apple.stackexchange.com/questions/387000)
-
 # Developer info
 ## Tracing warnings
 
@@ -215,6 +204,21 @@ Original pyinstaller command to produce spec file:
 pyinstaller -y -w -n moltenprot_mac  -i moltenprot/ui/icons/app_icon.ico --add-data moltenprot/VERSION:moltenprot --add-data COPYING:moltenprot --add-data moltenprot/doc/index.pdf:help --add-data moltenprot/resources/demo1.csv:demo_data --add-data moltenprot/resources/demo2.xlsx:demo_data --add-data moltenprot/resources/report.template:moltenprot/resources --exclude-module joblib --hidden-import scipy.special.cython_special moltenprot/__main__.py
 ```
 
+MacOS may prohibit startup of "non-verified" programs, and you will get a warning when trying to open `moltenprot_mac.app` for the first time. Open "System Settings" > "Privacy and Security", scroll to the section "Security" and press "Open anyway" for MoltenProt.
+
+
+Alternatively, use the command line:
+
+```
+# check if the file is in quarantine
+xattr moltenprot_mac.app
+# quarantined apps will have attribute `com.apple.quarantine`
+# remove the attribute recursively
+xattr -r -d com.apple.quarantine moltenprot_mac.app
+```
+[link](https://apple.stackexchange.com/questions/387000)
+
+
 ### Notes:
 * The output folder is quite large (~1 GB), presumably due to the presence of MKL library. This is inevitable, because scipy for Windows is only available with MKL
 * joblib has to be excluded, because it wrongly re-imports modules when run from a bundle
@@ -225,7 +229,7 @@ pyinstaller -y -w -n moltenprot_mac  -i moltenprot/ui/icons/app_icon.ico --add-d
 * if getting `ModuleNotFoundError: No module named 'pkg_resources.py2_warn`, downgrade setuptools `pip3 install --upgrade 'setuptools<45.0.0'`
 
 
-Copyright 2018-2021 Vadim Kotov
+Copyright 2018-2021,2025 Vadim Kotov
 
 Copying and distribution of this file, with or without modification,
 are permitted in any medium without royalty provided the copyright

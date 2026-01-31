@@ -18,6 +18,7 @@ a = Analysis(['moltenprot/__main__.py'],
 # add folder with demo files, based on this solution
 # https://stackoverflow.com/questions/11322538/including-a-directory-using-pyinstaller
 a.datas += Tree('moltenprot/demo_data', prefix='moltenprot/demo_data')
+a.datas += Tree('moltenprot/doc', prefix='moltenprot/doc')
 
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
