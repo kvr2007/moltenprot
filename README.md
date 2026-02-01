@@ -43,7 +43,7 @@ If you have python (versions 3.8 and above) available on your system, you can in
     
     alternatively, download a WHL file from [releases](https://github.com/kvr2007/moltenprot/releases) and run:
     
-    `python -m pip install moltenprot-0.4.1b0-py3-none-any.whl`
+    `python -m pip install moltenprot-0.4.1b0-py3-none-any.whl[gui,multiproc]`
     
     (the actual file name may differ depending on the version)
 
